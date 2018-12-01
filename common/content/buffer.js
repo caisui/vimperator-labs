@@ -1404,7 +1404,9 @@ const Buffer = Module("buffer", {
             if ("linkedBrowser" in tab) {
                 if (tab.linkedBrowser.contentDocument) {
                     return tab.linkedBrowser.contentDocument.location.href;
-                } else if (tab.linkedBrowser.lastURI.asciiSpec) {
+                } else if (tab.linkedBrowser.registeredOpenURI) {
+                    return tab.linkedBrowser.registeredOpenURI.asciiSpec;
+                } else if (tab.linkedBrowser.lastURI) {
                     return tab.linkedBrowser.lastURI.asciiSpec
                 }
             } else {
