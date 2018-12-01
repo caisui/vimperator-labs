@@ -21,7 +21,7 @@ var EXPORTED_SYMBOLS = ["xml", "TemplateSupportsXML"] ;
 function createEscapeFunc(obj) {
     const c2c = obj;
     const re = new RegExp("[" + Object.keys(c2c).join("") + "]", "g");
-    return function _escapeFunc(s) String(s).replace(re, function (c) c2c[c]);
+    return function _escapeFunc(s) { return String(s).replace(re, c => c2c[c]);};
 }
 
 var escapeHTML = createEscapeFunc({
@@ -58,7 +58,7 @@ function TemplateSupportsXML() {}
 
 function TemplateXML(s) {this.value = s;}
 TemplateXML.prototype = new TemplateSupportsXML;
-TemplateXML.prototype.toString = function () this.value;
+TemplateXML.prototype.toString = function () { return this.value; };
 
 function templateXML(portion, ...args) // {{{
 {

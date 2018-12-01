@@ -12,7 +12,7 @@
     const loader = Components.classes["@mozilla.org/moz/jssubscript-loader;1"]
                                      .getService(Components.interfaces.mozIJSSubScriptLoader);
     function load(script) {
-        for (let [i, base] in Iterator(prefix)) {
+        for (let [i, base] of prefix.entries()) {
             try {
                 loader.loadSubScript(base + script, modules);
                 return;

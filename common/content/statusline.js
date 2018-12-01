@@ -250,8 +250,9 @@ const StatusLine = Module("statusline", {
         statusline.addField("ssl", "The currently SSL status", "liberator-status-ssl",
             function updateSSLState (node, state) {
                 const VERSION = Services.appinfo.platformVersion;
-                if (services.get("vc").compare(VERSION, "51") >= 0) {
+                LABEL1: if (services.get("vc").compare(VERSION, "51") >= 0) {
                     conn_icon = document.getElementById("connection-icon");
+                    if (!conn_icon) break LABEL1;
                     node.style.listStyleImage = window.getComputedStyle(conn_icon).getPropertyValue("list-style-image");
                     if (node.style.listStyleImage === "none")
                         node.style.listStyleImage = "url(chrome://browser/skin/identity-icon.svg#normal)";
@@ -346,7 +347,7 @@ const StatusLine = Module("statusline", {
                         url = "[No Name]";
                 }
                 else {
-                    url = url.replace(RegExp("^liberator://help/(\\S+)#(.*)"), function (m, n1, n2) n1 + " " + decodeURIComponent(n2) + " [Help]")
+                    url = url.replace(RegExp("^liberator://help/(\\S+)#(.*)"), (m, n1, n2) => n1 + " " + decodeURIComponent(n2) + " [Help]")
                              .replace(RegExp("^liberator://help/(\\S+)"), "$1 [Help]");
                 }
 
@@ -392,7 +393,7 @@ const StatusLine = Module("statusline", {
             function updateTabCount (node, delayed) {
                 if (liberator.has("tabs")) {
                     if (delayed) {
-                        window.setTimeout(function() updateTabCount(node, false), 0);
+                        window.setTimeout(() => updateTabCount(node, false), 0);
                         return;
                     }
 

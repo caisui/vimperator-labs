@@ -47,7 +47,7 @@ const CommandLine = Module("commandline", {
                         }, this);
                         break;
                     case this.PRIVATE_END:
-                        for (let [key, obj] in Iterator(storage)) {
+                        for (let [key, obj] of Iterator(storage)) {
                             if (key.match(/^private-[0-9]/)) {
                                     delete storage[key];
                                 }
@@ -79,7 +79,7 @@ const CommandLine = Module("commandline", {
                 return this._messages;
             },
 
-            get length() this._messages.length,
+            get length() { return this._messages.length; },
 
             clear: function clear() {
                 this._messages = [];
@@ -187,7 +187,7 @@ const CommandLine = Module("commandline", {
             }
 
             commands.repeat = command;
-            liberator.trapErrors(function () liberator.execute(command));
+            liberator.trapErrors(() => liberator.execute(command));
             //if (!(modes.main == modes.COMMAND_LINE) && !commandline._commandlineWidget.classList.contains("hidden"))
             //    this.close();
         });
@@ -253,7 +253,7 @@ const CommandLine = Module("commandline", {
      *
      * @returns {boolean}
      */
-    _commandShown: function () modes.main == modes.COMMAND_LINE &&
+    _commandShown: () => modes.main == modes.COMMAND_LINE &&
         !(modes.extended & (modes.INPUT_MULTILINE | modes.OUTPUT_MULTILINE)),
 
     /**
@@ -376,16 +376,16 @@ const CommandLine = Module("commandline", {
                                  // FORCE_MULTILINE is given, FORCE_MULTILINE takes precedence
     APPEND_TO_MESSAGES : 1 << 3, // add the string to the message this._history
 
-    get completionContext() this._completions.context,
+    get completionContext() { return this._completions.context; },
 
-    get mode() (modes.extended == modes.EX) ? "cmd" : "search",
+    get mode() { return (modes.extended == modes.EX) ? "cmd" : "search"; },
 
-    get silent() this._silent,
+    get silent() { return this._silent; },
     set silent(val) {
         this._silent = val;
         this._quiet = this._quiet;
     },
-    get quiet() this._quiet,
+    get quiet() { return this._quiet; },
     set quiet(val) {
         this._quiet = val;
         Array.forEach(document.getElementById("liberator-commandline").childNodes, function (node) {
@@ -441,11 +441,11 @@ const CommandLine = Module("commandline", {
             return this._commandWidget.value;
         }
     },
-    set command(cmd) this._commandWidget.value = cmd,
+    set command(cmd) { this._commandWidget.value = cmd; },
 
-    get message() this._messageBox.value,
+    get message() { return this._messageBox.value; },
 
-    get messages() this._messageHistory,
+    get messages() { return this._messageHistory; },
 
     /**
      * Removes any previous output from the command line
@@ -1051,7 +1051,7 @@ const CommandLine = Module("commandline", {
     },
 
     // related floatbox
-    get bottombarPosition() (document.documentElement.boxObject.height - this._bottomBarWidget.boxObject.y) + "px",
+    get bottombarPosition() { return (document.documentElement.boxObject.height - this._bottomBarWidget.boxObject.y) + "px"; },
 }, {
     /**
      * A class for managing the history of an input field.
@@ -1083,7 +1083,7 @@ const CommandLine = Module("commandline", {
             let str = this.input.value;
             if (/^\s*$/.test(str))
                 return;
-            this.store.mutate("filter", function (line) (line.value || line) != str);
+            this.store.mutate("filter", line => (line.value || line) != str);
             this.store.push({ value: str, timestamp: Date.now(), privateData: this.checkPrivate(str) });
             this.store.truncate(options.history, true);
         },
@@ -1229,26 +1229,26 @@ const CommandLine = Module("commandline", {
             this.caret = this.prefix.length + completion.length;
         },
 
-        get caret() commandline._commandWidget.selectionEnd,
+        get caret() { return commandline._commandWidget.selectionEnd; },
         set caret(offset) {
             commandline._commandWidget.selectionStart = offset;
             commandline._commandWidget.selectionEnd = offset;
         },
 
-        get start() this.context.allItems.start,
+        get start() { return this.context.allItems.start; },
 
-        get items() this.context.allItems.items,
+        get items() { return this.context.allItems.items; },
 
-        get substring() this.context.longestAllSubstring,
+        get substring() { return this.context.longestAllSubstring; },
 
-        get wildtype() this.wildtypes[this.wildIndex] || "",
+        get wildtype() { return this.wildtypes[this.wildIndex] || ""; },
 
-        get type() ({
+        get type() { return ({
             list:    this.wildmode.checkHas(this.wildtype, "list"),
             longest: this.wildmode.checkHas(this.wildtype, "longest"),
             first:   this.wildmode.checkHas(this.wildtype, ""),
             full:    this.wildmode.checkHas(this.wildtype, "full")
-        }),
+        }); },
 
         complete: function complete(show, tabPressed) {
             this.context.reset();
@@ -1388,7 +1388,7 @@ const CommandLine = Module("commandline", {
                 try {
                     this.waiting = true;
                     for (let context of list) {
-                        function done() !(idx >= n + context.items.length || idx == -2 && !context.items.length)
+                        function done() { return !(idx >= n + context.items.length || idx == -2 && !context.items.length); }
                         while (context.incomplete && !done())
                             liberator.threadYield(false, true);
 
@@ -1519,7 +1519,7 @@ const CommandLine = Module("commandline", {
                     if (str != null)
                         command.action(str);
                 }, {
-                    completer: function (context) completion.javascript(context),
+                    completer: context => completion.javascript(context),
                     literal: 0
                 });
         });
@@ -1536,7 +1536,7 @@ const CommandLine = Module("commandline", {
                     commandline.echo(message.str, message.highlight, commandline.FORCE_SINGLELINE);
                 }*/
                 else { //if (commandline._messageHistory.length > 1) {
-                    let list = template.map2(xml, commandline._messageHistory.messages, function (message)
+                    let list = template.map2(xml, commandline._messageHistory.messages, message =>
                         xml`<div highlight=${message.highlight + " Message"}>${message.str}</div>`);
                     liberator.echo(list, commandline.FORCE_MULTILINE);
                 }
@@ -1551,9 +1551,9 @@ const CommandLine = Module("commandline", {
         commands.add(["sil[ent]"],
             "Run a command silently",
             function (args) {
-                commandline.runSilently(function () liberator.execute(args[0], null, true));
+                commandline.runSilently(() => liberator.execute(args[0], null, true));
             }, {
-                completer: function (context) completion.ex(context),
+                completer: context => completion.ex(context),
                 literal: 0
             });
     },
@@ -1613,33 +1613,33 @@ const CommandLine = Module("commandline", {
             "Items which are completed at the :open prompts",
             "charlist", typeof(config.defaults.complete) == "string" ? config.defaults.complete : "sl",
             {
-                completer: function (context) array(values(completion.urlCompleters))
+                completer: context => array(values(completion.urlCompleters))
             });
 
         options.add(["history", "hi"],
             "Number of Ex commands and search patterns to store in the command-line this._history",
             "number", 500,
-            { validator: function (value) value >= 0 });
+            { validator: value => value >= 0 });
 
         options.add(["maxitems"],
             "Maximum number of items to display at once",
             "number", 20,
-            { validator: function (value) value >= 1 });
+            { validator: value => value >= 1 });
 
         options.add(["messages", "msgs"],
             "Number of messages to store in the message this._history",
             "number", 100,
-            { validator: function (value) value >= 0 });
+            { validator: value => value >= 0 });
 
         options.add(["messagetimeout", "mto"],
             "Automatically hide messages after a timeout (in ms)",
             "number", 10000,
             {
-                completer: function (context) [
+                completer: context => [
                     ["-1",  "Keep forever"],
                     ["0",   "Close immediately"],
                 ],
-                validator: function (value) value >= -1
+                validator: value => value >= -1
             });
 
         options.add(["showmode", "smd"],
@@ -1652,9 +1652,9 @@ const CommandLine = Module("commandline", {
              {
                  completer: function completer(value) {
                      let engines = services.get("search").getVisibleEngines({})
-                                           .filter(function (engine) engine.supportsResponseType("application/x-suggestions+json"));
+                                           .filter(engine => engine.supportsResponseType("application/x-suggestions+json"));
 
-                     return engines.map(function (engine) [engine.alias, engine.description]);
+                     return engines.map(engine => [engine.alias, engine.description]);
                  }
              });
 
@@ -1662,7 +1662,7 @@ const CommandLine = Module("commandline", {
             "Define how command line completion works",
             "stringlist", "list:full",
             {
-                completer: function (context) [
+                completer: context => [
                     // Why do we need ""?
                     ["",              "Complete only the first match"],
                     ["full",          "Complete the next full match"],
@@ -1678,7 +1678,7 @@ const CommandLine = Module("commandline", {
             });
 
             let idList = ["liberator-multiline-output", "liberator-completions"];
-            function floatBox(id) document.getElementById(id).parentNode
+            function floatBox(id) { document.getElementById(id).parentNode; }
 
             let animation = "animation";
             options.add(["animations", "ani"], "enabled animation", "boolean", false, {
@@ -1689,7 +1689,7 @@ const CommandLine = Module("commandline", {
                     });
                     return value;
                 },
-                getter: function () floatBox(idList[0]).classList.contains(animation),
+                getter: () => floatBox(idList[0]).classList.contains(animation),
             });
     },
     styles: function () {
@@ -1733,7 +1733,7 @@ const ItemList = Class("ItemList", {
         this._minHeight = 0;
     },
 
-    _dom: function (xml, map) util.xmlToDom(xml, this._doc, map),
+    _dom(xml, map) { return util.xmlToDom(xml, this._doc, map); },
 
     _autoSize: function () {
         if (this._container.collapsed)
@@ -1761,7 +1761,7 @@ const ItemList = Class("ItemList", {
         separator.collapsed = this.visible() && !mowVisible;
     },
 
-    _getCompletion: function (index) this._completionElements.snapshotItem(index - this._startIndex),
+    _getCompletion(index) { return this._completionElements.snapshotItem(index - this._startIndex); },
 
     _init: function () {
         this._div = this._dom(
@@ -1770,7 +1770,7 @@ const ItemList = Class("ItemList", {
                 <div key="completions"/>
                 <div highlight="Completions">
                 ${
-                    template.map2(xml, util.range(0, options.maxitems * 2), function (i)
+                    template.map2(xml, util.range(0, options.maxitems * 2), i =>
                     xml`<span highlight="CompItem">
                         <li highlight="NonText">~</li>
                     </span>`)
@@ -1817,7 +1817,7 @@ const ItemList = Class("ItemList", {
         let off = 0;
         let end = this._startIndex + options.maxitems;
         function getRows(context) {
-            function fix(n) util.Math.constrain(n, 0, len)
+            function fix(n) { return util.Math.constrain(n, 0, len); }
             let len = context.items.length;
             let start = off;
             end -= !!context.message + context.incomplete;
@@ -1844,7 +1844,7 @@ const ItemList = Class("ItemList", {
 
             for (let [i, row] of context.getRows(start, end, this._doc))
                 nodes[i] = row;
-            for (let [i, row] in util.Array.iteritems(nodes)) {
+            for (let [i, row] of util.Array.iteritems(nodes)) {
                 if (!row)
                     continue;
                 let display = (i >= start && i < end);
@@ -1879,7 +1879,7 @@ const ItemList = Class("ItemList", {
         this._container.collapsed = false;
         this._updateSeparatorVisibility();
     },
-    visible: function visible() !this._container.collapsed,
+    visible() { return !this._container.collapsed; },
 
     reset: function () {
         this._startIndex = this._endIndex = this._selIndex = -1;
@@ -1936,7 +1936,7 @@ const ItemList = Class("ItemList", {
             this._getCompletion(index).setAttribute("selected", "true");
     },
 
-    onEvent: function onEvent(event) false
+    onEvent: event => false
 }, {
     WAITING_MESSAGE: "Generating results..."
 });

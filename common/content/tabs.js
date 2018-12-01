@@ -63,7 +63,7 @@ const Tabs = Module("tabs", {
     /**
      * @property {number} The number of tabs in the current window.
      */
-    get count() config.tabbrowser.visibleTabs.length,
+    get count() { return config.tabbrowser.visibleTabs.length; },
 
     /**
      * @property {Object} The local options store for the current tab.
@@ -99,13 +99,13 @@ const Tabs = Module("tabs", {
      * @property {Object} The local state store for the currently selected
      *     tab.
      */
-    get localStore() this.getLocalStore(),
+    get localStore() { return this.getLocalStore(); },
 
     /**
      * @property {Object[]} The array of closed tabs for the current
      *     session.
      */
-    get closedTabs() JSON.parse(services.get("sessionStore").getClosedTabData(window)),
+    get closedTabs() { return JSON.parse(services.get("sessionStore").getClosedTabData(window)); },
 
     /**
      * Returns the index of <b>tab</b> or the index of the currently
@@ -650,7 +650,7 @@ const Tabs = Module("tabs", {
                                 title = browsers[i].contentTitle;
                             }
 
-                            [host, title, uri] = [host, title, uri].map(String.toLowerCase);
+                            [host, title, uri] = [host, title, uri].map(s => String(s).toLowerCase());
 
                             if (host.indexOf(str) >= 0 || uri == str ||
                                 (special && (title.indexOf(str) >= 0 || uri.indexOf(str) >= 0))) {
@@ -679,7 +679,7 @@ const Tabs = Module("tabs", {
                          ["left", "Select the tab to the left"],
                          ["right", "Select the tab to the right"]]],
                 ],
-                completer: function (context) completion.buffer(context),
+                completer: context => completion.buffer(context),
                 literal: 0
             });
 
@@ -696,7 +696,7 @@ const Tabs = Module("tabs", {
                 }
             }, {
                 argCount: "+",
-                completer: function (context) completion.ex(context),
+                completer: context => completion.ex(context),
                 literal: 0
             });
 
@@ -712,7 +712,7 @@ const Tabs = Module("tabs", {
                 }
             }, {
                 argCount: "+",
-                completer: function (context) completion.ex(context),
+                completer: context => completion.ex(context),
                 literal: 0
             });
 
@@ -726,13 +726,13 @@ const Tabs = Module("tabs", {
                 }
             }, {
                 argCount: "1",
-                completer: function (context) completion.ex(context),
+                completer: context => completion.ex(context),
                 literal: 0
             });
 
         commands.add(["tabl[ast]", "bl[ast]"],
             "Switch to the last tab",
-            function () tabs.select("$", false),
+            () => tabs.select("$", false),
             { argCount: "0" });
 
         // TODO: "Zero count" if 0 specified as arg
@@ -814,7 +814,7 @@ const Tabs = Module("tabs", {
                     argCount: "?",
                     bang: true,
                     count: true,
-                    completer: function (context) completion.buffer(context, completion.buffer.ALL),
+                    completer: context => completion.buffer(context, completion.buffer.ALL),
                     literal: 0
                 });
 
@@ -881,8 +881,8 @@ const Tabs = Module("tabs", {
                         liberator.open("", { where: where });
                 }, {
                     bang: true,
-                    canonicalize: function (cmd) cmd.replace(/^(to?|tope?|topen|tabopen|tabnew)\b/, 'open'),
-                    completer: function (context) completion.url(context),
+                    canonicalize: cmd => cmd.replace(/^(to?|tope?|topen|tabopen|tabnew)\b/, 'open'),
+                    completer: context => completion.url(context),
                     literal: 0,
                     privateData: true
                 });
@@ -905,7 +905,7 @@ const Tabs = Module("tabs", {
                     if (options.get("activate").has("tabopen", "all"))
                         activate = !activate;
 
-                    for (let i in util.range(0, Math.max(1, args.count)))
+                    for (let i of util.range(0, Math.max(1, args.count)))
                         tabs.cloneTab(tab, activate);
                 }, {
                     argCount: "0",
@@ -919,7 +919,7 @@ const Tabs = Module("tabs", {
             commands.add(["taba[ttach]"],
                 "Attach the current tab to another window",
                 function (args) {
-                    liberator.assert(args.length <= 2 && !args.some(function (i) !/^\d+$/.test(i)),
+                    liberator.assert(args.length <= 2 && !args.some(i => !/^\d+$/.test(i)),
                         "Trailing characters");
 
                     let [winIndex, tabIndex] = args.map(function(i) { return parseInt(i, 10) });
@@ -945,7 +945,7 @@ const Tabs = Module("tabs", {
                     argCount: "+",
                     completer: function (context, args) {
                         if (args.completeArg == 0) {
-                            context.filters.push(function ({ item: win }) win != window);
+                            context.filters.push(({ item: win }) => win != window);
                             completion.window(context);
                         }
                     }
@@ -965,7 +965,7 @@ const Tabs = Module("tabs", {
                     if (m)
                         window.undoCloseTab(Number(m[1]) - 1);
                     else if (args) {
-                        for (let [i, item] in Iterator(tabs.closedTabs))
+                        for (let [i, item] of Iterator(tabs.closedTabs))
                             if (item.state.entries[item.state.index - 1].url == args) {
                                 window.undoCloseTab(i);
                                 return;
@@ -979,7 +979,7 @@ const Tabs = Module("tabs", {
                         context.anchored = false;
                         context.compare = CompletionContext.Sort.unsorted;
                         context.filters = [CompletionContext.Filter.textDescription];
-                        context.keys = { text: function ([i, { state: s }]) (i + 1) + ": " + s.entries[s.index - 1].url, description: "[1].title", icon: "[1].image" };
+                        context.keys = { text: ([i, { state: s }]) => (i + 1) + ": " + s.entries[s.index - 1].url, description: "[1].title", icon: "[1].image" };
                         context.completions = Iterator(tabs.closedTabs);
                     },
                     count: true,
@@ -989,7 +989,7 @@ const Tabs = Module("tabs", {
             commands.add(["undoa[ll]"],
                 "Undo closing of all closed tabs",
                 function (args) {
-                    for (let i in Iterator(tabs.closedTabs))
+                    for (let i of Iterator(tabs.closedTabs))
                         window.undoCloseTab(0);
 
                 },
@@ -1105,7 +1105,7 @@ const Tabs = Module("tabs", {
                 "Define when tabs are automatically activated",
                 "stringlist", "addons,downloads,extoptions,help,homepage,quickmark,tabopen,paste",
                 {
-                    completer: function (context) [
+                    completer: context => [
                         ["all", "All tabs created by any commands and mappings"],
                         ["addons", ":addo[ns] command"],
                         ["downloads", ":downl[oads] command"],
@@ -1122,7 +1122,7 @@ const Tabs = Module("tabs", {
                 "Define which commands should output in a new tab by default",
                 "stringlist", "",
                 {
-                    completer: function (context) [
+                    completer: context => [
                         ["all", "All commands"],
                         ["addons", ":addo[ns] command"],
                         ["downloads", ":downl[oads] command"],
@@ -1156,7 +1156,7 @@ const Tabs = Module("tabs", {
                         options.safeSetPref("browser.link.open_newwindow.restriction", restriction, "See 'popups' option.");
                         return value;
                     },
-                    completer: function (context) [
+                    completer: context => [
                         ["tab",     "Open popups in a new tab"],
                         ["window",  "Open popups in a new window"],
                         ["resized", "Open resized popups in a new window"]

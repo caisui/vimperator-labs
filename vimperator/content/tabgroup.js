@@ -55,7 +55,7 @@ var TabGroup = Module("tabGroup", {
 
         let test;
         if (typeof name == "number")
-            test = function (g) g.id == name;
+            test = g => g.id == name;
         else {
             name = name.toLowerCase();
             let id;
@@ -65,10 +65,10 @@ var TabGroup = Module("tabGroup", {
 
             if (id) {
                 id = parseInt(id, 10);
-                test = function (g) g.id == id;
+                test = g => g.id == id;
             }
             else
-                test = function (g) g.getTitle().toLowerCase() == name;
+                test = g => g.getTitle().toLowerCase() == name;
         }
         // Using shim, iterate tabView.GroupItems itself
         for (let group of this.tabView.GroupItems.groupItems) {
@@ -321,7 +321,7 @@ var TabGroup = Module("tabGroup", {
                 }, {
                     bang: true,
                     literal: 0,
-                    completer: function (context) completion.buffer(context),
+                    completer: context => completion.buffer(context),
                 }),
             /**
              * Panorama SubCommand pushTab
@@ -352,7 +352,7 @@ var TabGroup = Module("tabGroup", {
                 }, {
                     bang: true,
                     literal: 0,
-                    completer: function (context) completion.tabgroup(context, true),
+                    completer: context => completion.tabgroup(context, true),
                 }),
             /**
              * Panorama SubCommand remove
@@ -363,7 +363,7 @@ var TabGroup = Module("tabGroup", {
                 function (args) { if (tabGroup.TV) tabGroup.remove(args.literalArg); },
                 {
                     literal: 0,
-                    completer: function (context) completion.tabgroup(context, false),
+                    completer: context => completion.tabgroup(context, false),
                 }),
             /**
              * Panorama SubCommand rename
@@ -414,7 +414,7 @@ var TabGroup = Module("tabGroup", {
                 }, {
                     count: true,
                     literal: 0,
-                    completer: function (context) completion.tabgroup(context, true),
+                    completer: context => completion.tabgroup(context, true),
                 }),
         ];
         commands.add(["tabgroups", "panorama"],
@@ -441,7 +441,7 @@ var TabGroup = Module("tabGroup", {
             if (excludeActiveGroup) {
                 let activeGroup = GI.getActiveGroupItem();
                 if (activeGroup)
-                    groupItems = groupItems.filter(function(group) group.id != activeGroup.id);
+                    groupItems = groupItems.filter(group => group.id != activeGroup.id);
             }
             context.completions = groupItems.map(function(group) {
                 let title = group.id + ": " + (group.getTitle() || "(Untitled)");

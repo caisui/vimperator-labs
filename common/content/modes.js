@@ -29,12 +29,12 @@ const Modes = Module("modes", {
         // main modes, only one should ever be active
         this.addMode("NORMAL",   { char: "n", display: -1 });
         this.addMode("INSERT",   { char: "i", input: true });
-        this.addMode("VISUAL",   { char: "v", display: function () "VISUAL" + (editor.getVisualMode() ? " " + editor.getVisualMode() : "") });
+        this.addMode("VISUAL",   { char: "v", display: () => "VISUAL" + (editor.getVisualMode() ? " " + editor.getVisualMode() : "") });
         this.addMode("COMMAND_LINE", { char: "c", input: true, display: -1 });
         this.addMode("CARET"); // text cursor is visible
         this.addMode("TEXTAREA", { char: "i" });
         this.addMode("EMBED",    { input: true });
-        this.addMode("CUSTOM",   { display: function () plugins.mode });
+        this.addMode("CUSTOM",   { display: () => plugins.mode });
         // this._extended modes, can include multiple modes, and even main modes
         this.addMode("EX", true);
         this.addMode("HINTS", true);
@@ -129,9 +129,9 @@ const Modes = Module("modes", {
 
     NONE: 0,
 
-    __iterator__: function () util.Array.itervalues(this.all),
+    __iterator__: () => util.Array.itervalues(this.all),
 
-    get all() this._mainModes.slice(),
+    get all() { return this._mainModes.slice(); },
 
     get mainModes() {
         return iter(Object.keys(modes._modeMap)
@@ -139,7 +139,7 @@ const Modes = Module("modes", {
                           .map(k => modes._modeMap[k]));
     },
 
-    get mainMode() this._modeMap[this._main],
+    get mainMode() { return this._modeMap[this._main]; },
 
     addMode: function (name, extended, options) {
         let disp = name.replace(/_/g, " ");
@@ -156,14 +156,14 @@ const Modes = Module("modes", {
             name: name,
             disp: disp
         }, options);
-        this._modeMap[name].display = this._modeMap[name].display || function () disp;
+        this._modeMap[name].display = this._modeMap[name].display || (() => disp);
         if (!extended)
             this._mainModes.push(this[name]);
         if ("mappings" in modules)
             mappings.addMode(this[name]);
     },
 
-    getMode: function (name) this._modeMap[name],
+    getMode(name) { return this._modeMap[name]; },
 
     getCharModes: function (chr) {
         return Object.keys(this._modeMap)
@@ -174,7 +174,7 @@ const Modes = Module("modes", {
     matchModes: function (obj) {
         return Object.keys(this._modeMap)
                      .map(k => this._modeMap[k])
-                     .filter(m => array(keys(obj)).every(function (k) obj[k] == (m[k] || false)));
+                     .filter(m => array(keys(obj)).every(k => obj[k] == (m[k] || false)));
     },
 
     // show the current mode string in the command line
@@ -264,26 +264,26 @@ const Modes = Module("modes", {
 
     isMenuShown: false, // when a popup menu is active
 
-    get passNextKey() this._passNextKey,
+    get passNextKey() { return this._passNextKey; },
     set passNextKey(value) { this._passNextKey = value; this.show(); },
 
-    get passAllKeys() this._passAllKeys,
+    get passAllKeys() { return this._passAllKeys; },
     set passAllKeys(value) {
         this._passAllKeys = value;
         this._passKeysExceptions = null;
         this.show();
     },
 
-    get isRecording()  this._isRecording,
+    get isRecording()  { return this._isRecording; },
     set isRecording(value) { this._isRecording = value; this.show(); },
 
-    get isReplaying() this._isReplaying,
+    get isReplaying() { return this._isReplaying; },
     set isReplaying(value) { this._isReplaying = value; this.show(); },
 
-    get main() this._main,
+    get main() { return this._main; },
     set main(value) { this.set(value); },
 
-    get extended() this._extended,
+    get extended() { return this._extended; },
     set extended(value) { this.set(null, value); }
 });
 

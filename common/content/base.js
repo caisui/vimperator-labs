@@ -25,6 +25,8 @@ function* allkeys(obj) {
 function* keys(obj) {
     for (let prop of Object.getOwnPropertyNames(obj))
         yield prop;
+    for (let prop of Object.getOwnPropertySymbols(obj))
+        yield prop;
 }
 
 function* values(obj) {
@@ -43,17 +45,17 @@ function dict(ary) {
 
 function iter(obj) {
     if (obj instanceof Ci.nsISimpleEnumerator)
-        return (function () {
+        return (function*() {
             while (obj.hasMoreElements())
                 yield obj.getNext();
         })();
     if (isinstance(obj, [Ci.nsIStringEnumerator, Ci.nsIUTF8StringEnumerator]))
-        return (function () {
+        return (function* () {
             while (obj.hasMore())
                 yield obj.getNext();
         })();
-    if (isinstance(obj, Ci.nsIDOMNodeIterator))
-        return (function () {
+    if (Ci.nsIDOMNodeIterator && isinstance(obj, Ci.nsIDOMNodeIterator))
+        return (function* () {
             try {
                 while (true)
                     yield obj.nextNode();
@@ -68,16 +70,39 @@ function iter(obj) {
         })();
     if ((typeof NamedNodeMap !== "undefined" && obj instanceof NamedNodeMap) ||
         (typeof MozNamedAttrMap !== "undefined" && obj instanceof MozNamedAttrMap))
-        return (function () {
+        return (function* () {
             for (let i = 0, len = obj.length; i < len; ++i)
                 yield [obj[i].name, obj[i]];
         })();
     if (obj instanceof Array)
-        return (function () {
+        return (function* () {
             for (value of obj)
                 yield value;
         })();
     return Iterator(obj);
+}
+
+function entries(obj) {
+    return Object.entries(obj);
+}
+
+function Iterator(obj) {
+    var gene;
+    if (obj instanceof Iterator) return obj;
+    if (isgenerator(obj)) {
+        gene = obj;
+    } else if ("__iterator__" in obj) {
+        console.warn(new Error("__iterator__ is deprecated."));
+        gene = obj.__iterator__();
+    } else {
+        gene = Object.entries(obj)[Symbol.iterator]();
+    }
+
+    let next = gene.next.bind(gene);
+    return {
+        __proto__: Iterator.prototype,
+        [Symbol.iterator]() { return ({ next }); },
+    };
 }
 
 function issubclass(targ, src) {
@@ -179,7 +204,7 @@ function curry(fn, length, self, acc) {
         return fn;
 
     // Close over function with 'this'
-    function close(self, fn) function () fn.apply(self, Array.slice(arguments))
+    function close(self, fn) { return function () { return fn.apply(self, Array.slice(arguments));};}
 
     if (acc == null)
         acc = [];
@@ -307,7 +332,7 @@ function Class() {
             constructor: Constructor,
             get closure() {
                 delete this.closure;
-                function closure(fn) function () fn.apply(self, arguments);
+                function closure(fn) { return function () { return fn.apply(self, arguments); };}
                 for (let k in this)
                     if (!this.__lookupGetter__(k) && callable(this[k]))
                         closure[k] = closure(self[k]);
@@ -339,7 +364,7 @@ function Class() {
     });
     return Constructor;
 }
-Class.toString = function () "[class " + this.constructor.name + "]",
+Class.toString = function () {return "[class " + this.constructor.name + "]"; },
 Class.prototype = {
     /**
      * Initializes new instances of this class. Called automatically
@@ -347,7 +372,7 @@ Class.prototype = {
      */
     init: function () {},
 
-    toString: function () "[instance " + this.constructor.name + "]",
+    toString: function () { return "[instance " + this.constructor.name + "]"; },
 
     /**
      * Exactly like {@see nsIDOMWindow#setTimeout}, except that it
@@ -361,7 +386,7 @@ Class.prototype = {
      */
     setTimeout: function (callback, timeout) {
         const self = this;
-        function target() callback.call(self)
+        function target() { return callback.call(self); }
         return window.setTimeout(target, timeout);
     }
 };
@@ -388,7 +413,7 @@ function Struct(...args) {
     });
     args.forEach(function (name, i) {
         Object.defineProperty(Struct.prototype, name, {
-            get: function () this[i],
+            get: function () { return this[i]; },
             set: function (val) { this[i] = val },
             enumerable: true,
         });
@@ -402,7 +427,7 @@ const StructBase = Class("StructBase", {
                 this[i] = args[i];
     },
 
-    clone: function clone() this.constructor.apply(null, this.slice()),
+    clone: function clone() { return this.constructor.apply(null, this.slice()); },
 
     // Iterator over our named members
     __iterator__: function () {

@@ -15,7 +15,7 @@ var Config = Module("config", ConfigBase, {
     name: "Muttator",
     hostApplication: "Thunderbird",
 
-    get mainWindowId() this.isComposeWindow ? "msgcomposeWindow" : "messengerWindow",
+    get mainWindowId() { return this.isComposeWindow ? "msgcomposeWindow" : "messengerWindow"; },
 
     /*** optional options, there are checked for existence and a fallback provided  ***/
     get features() {
@@ -39,13 +39,13 @@ var Config = Module("config", ConfigBase, {
     },
 
     //get isComposeWindow() window.wintype == "msgcompose",
-    get isComposeWindow() window.document.location == "chrome://messenger/content/messengercompose/messengercompose.xul",
-    get browserModes() [modes.MESSAGE],
-    get mailModes() [modes.NORMAL],
+    get isComposeWindow() { return window.document.location == "chrome://messenger/content/messengercompose/messengercompose.xul"; },
+    get browserModes() { return [modes.MESSAGE]; },
+    get mailModes() { return [modes.NORMAL]; },
     // focusContent() focuses this widget
-    get mainWidget() this.isComposeWindow ? document.getElementById("content-frame") : GetThreadTree(),
-    get mainToolbar() document.getElementById(this.isComposeWindow ? "compose-toolbar-menubar2" : "mail-bar3"),
-    get visualbellWindow() document.getElementById(this.mainWindowId),
+    get mainWidget() { return this.isComposeWindow ? document.getElementById("content-frame") : GetThreadTree(); },
+    get mainToolbar() { return document.getElementById(this.isComposeWindow ? "compose-toolbar-menubar2" : "mail-bar3"); },
+    get visualbellWindow() { return document.getElementById(this.mainWindowId); },
     styleableChrome: ["chrome://messenger/content/messenger.xul",
                       "chrome://messenger/content/messengercompose/messengercompose.xul"],
 
@@ -108,7 +108,7 @@ var Config = Module("config", ConfigBase, {
             function () { buffer.viewSelectionSource(); }]*/
     ],
 
-    get hasTabbrowser() !this.isComposeWindow,
+    get hasTabbrowser() { return !this.isComposeWindow; },
 
     /*focusChange: function (win) {
         // we switch to -- MESSAGE -- mode for Muttator, when the main HTML widget gets focus
@@ -120,18 +120,18 @@ var Config = Module("config", ConfigBase, {
                 liberator.mode = modes.MESSAGE;
         }
     },*/
-    get browser() this.isComposeWindow ? window.GetCurrentEditorElement() : window.getBrowser(),
+    get browser() { return this.isComposeWindow ? window.GetCurrentEditorElement() : window.getBrowser(); },
     tabbrowser: {
         __proto__: document.getElementById("tabmail"),
-        get mTabContainer() this.tabContainer,
-        get mTabs() this.tabContainer.childNodes,
-        get visibleTabs() Array.slice(this.mTabs),
-        get mCurrentTab() this.tabContainer.selectedItem,
-        get mCurrentBrowser() this.getBrowserForSelectedTab(),
-        get mStrip() this.tabStrip,
+        get mTabContainer() { return this.tabContainer; },
+        get mTabs() { return this.tabContainer.childNodes; },
+        get visibleTabs() { return Array.slice(this.mTabs); },
+        get mCurrentTab() { return this.tabContainer.selectedItem; },
+        get mCurrentBrowser() { return this.getBrowserForSelectedTab(); },
+        get mStrip() { return this.tabStrip; },
         get browsers() {
             let browsers = [];
-            for ([,tab] in Iterator(this.tabInfo)) {
+            for ([,tab] of Iterator(this.tabInfo)) {
                 let func = tab.mode.getBrowser || tab.mode.tabType.getBrowser;
                 if (func)
                     browsers.push(func.call(tab.mode.tabType, tab));
@@ -167,11 +167,11 @@ var Config = Module("config", ConfigBase, {
             return document.getElementById("appcontent").boxObject.height;
     },
 
-    get scripts() this.isComposeWindow ? ["compose/compose.js"] : [
+    get scripts() { return this.isComposeWindow ? ["compose/compose.js"] : [
         "addressbook.js",
         "mail.js",
         "tabs.js",
-    ],
+    ]; },
 
     // to allow Vim to :set ft=mail automatically
     tempFile: "mutt-ator-mail",
@@ -211,7 +211,7 @@ var Config = Module("config", ConfigBase, {
                             MailOfflineMgr.toggleOfflineStatus();
                         return value;
                     },
-                    getter: function () MailOfflineMgr.isOnline()
+                    getter: () => MailOfflineMgr.isOnline()
                 });
         }
     }

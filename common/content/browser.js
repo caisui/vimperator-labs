@@ -35,7 +35,7 @@ const Browser = Module("browser", {
             "string", "UTF-8",
             {
                 scope: Option.SCOPE_LOCAL,
-                getter: function () config.browser.docShell.QueryInterface(Ci.nsIDocCharset).charset,
+                getter: () => config.browser.docShell.QueryInterface(Ci.nsIDocCharset).charset,
                 setter: function (val) {
                     if (options.encoding == val)
                         return val;
@@ -52,7 +52,7 @@ const Browser = Module("browser", {
                     catch (e) { liberator.echoerr(e); }
                     return null;
                 },
-                completer: function (context) completion.charset(context)
+                completer: context => completion.charset(context)
             });
 
         options.add(["urlseparator"],
@@ -238,8 +238,8 @@ const Browser = Module("browser", {
                 else
                     liberator.open("");
             }, {
-                canonicalize: function (cmd) cmd.replace(/^(op?|open?)\b/, 'open'),
-                completer: function (context) completion.url(context),
+                canonicalize: cmd => cmd.replace(/^(op?|open?)\b/, 'open'),
+                completer: context => completion.url(context),
                 literal: 0,
                 privateData: true
             });

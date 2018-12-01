@@ -32,7 +32,7 @@
  */
 const Map = Class("Map", {
     init: function (modes, keys, description, action, extraInfo) {
-        modes = Array.concat(modes).map(function (m) isobject(m) ? m.mask : m);
+        modes = Array.concat(modes).map(m => isobject(m) ? m.mask : m);
 
         this.modes = modes;
         this.names = keys.map(events.canonicalKeys);
@@ -93,7 +93,7 @@ const Map = Class("Map", {
      * @param {string} name The name to query.
      * @returns {boolean}
      */
-    hasName: function (name) this.names.indexOf(name) >= 0,
+    hasName(name) { return this.names.indexOf(name) >= 0; },
 
     /**
      * Execute the action for this mapping.
@@ -116,7 +116,7 @@ const Map = Class("Map", {
             args.push(argument);
 
         let self = this;
-        function repeat() self.action.apply(self, args)
+        function repeat() { return self.action.apply(self, args); }
         if (this.names[0] != ".") // FIXME: Kludge.
             mappings.repeat = repeat;
 
@@ -179,10 +179,10 @@ const Mappings = Module("mappings", {
         let maps = this._user[mode] || [];
         let names;
 
-        for (let [i, map] in Iterator(maps)) {
+        for (let [i, map] of Iterator(maps)) {
             if (!this._matchingUrlsTest(map, patternOrUrl))
                 continue;
-            for (let [j, name] in Iterator(map.names)) {
+            for (let [j, name] of Iterator(map.names)) {
                 if (name == cmd) {
                     map.names.splice(j, 1);
                     if (map.names.length == 0)
@@ -193,7 +193,7 @@ const Mappings = Module("mappings", {
         }
     },
 
-    _expandLeader: function (keyString) keyString.replace(/<Leader>/gi, mappings.getMapLeader()),
+    _expandLeader: keyString => keyString.replace(/<Leader>/gi, mappings.getMapLeader()),
 
     // Return all mappings present in all @modes
     _mappingsIterator: function (modes, stack) {
@@ -204,7 +204,8 @@ const Mappings = Module("mappings", {
 
     // NOTE: just normal mode for now
     /** @property {Iterator(Map)} @private */
-    __iterator__: function () this._mappingsIterator([modes.NORMAL], this._main),
+    __iterator__() { return this._mappingsIterator([modes.NORMAL], this._main); },
+    [Symbol.iterator]() { return this._mappingsIterator([modes.NORMAL], this._main); },
 
     // used by :mkvimperatorrc to save mappings
     /**
@@ -214,7 +215,7 @@ const Mappings = Module("mappings", {
      * @param {number} mode The mode to return mappings from.
      * @returns {Iterator(Map)}
      */
-    getUserIterator: function (mode) this._mappingsIterator(mode, this._user),
+    getUserIterator(mode) { return this._mappingsIterator(mode, this._user); },
 
     addMode: function (mode) {
         if (!(mode in this._user || mode in this._main)) {
@@ -307,7 +308,7 @@ const Mappings = Module("mappings", {
      * @returns {Map[]}
      */
     getCandidates: function (mode, prefix, patternOrUrl) {
-        let mappings = this._user[mode].concat(this._main[mode]);
+        let mappings = (this._user[mode]||[]).concat(this._main[mode]);
         let matches = [];
 
         for (let map of mappings) {
@@ -348,7 +349,7 @@ const Mappings = Module("mappings", {
      */
     hasMap: function (mode, cmd, patternOrUrl) {
         let self = this;
-        return this._user[mode].some(function (map) map.hasName(cmd) && self._matchingUrlsTest(map, patternOrUrl));
+        return this._user[mode].some(map => map.hasName(cmd) && self._matchingUrlsTest(map, patternOrUrl));
     },
 
     /**
@@ -391,13 +392,13 @@ const Mappings = Module("mappings", {
         for (map of maps) {
             let modes = "";
             map.modes.forEach(function (mode) {
-                for (let m in modules.modes.mainModes)
+                for (let m of modules.modes.mainModes)
                     if (mode == m.mask)// && modeSign.indexOf(m.char) == -1)
                         //modeSign += (modeSign ? "" : ",") + m.name;
                         modes += (modes ? ", " : "") + m.name;
             });
             let option = xml``;
-            var add = function (lhs, rhs) xml`${lhs}${rhs}`;
+            var add = (lhs, rhs) => xml`${lhs}${rhs}`;
             if (map.silent)
                 option = add(option, xml`<span highlight="Keyword">silent</span>`);
             if (map.noremap) {
@@ -477,7 +478,7 @@ const Mappings = Module("mappings", {
                         Array.from(mappings.getUserIterator(modes))
                              .filter(m => m.matchingUrls)
                              .map(m => m.matchingUrls.source)
-                    ).map(function (re) [re, re]);
+                    ).map(re => [re, re]);
                     if (current) {
                         if (buffer.URL)
                             completions.unshift([util.escapeRegex(buffer.URL), "Current buffer URL"]);
@@ -489,7 +490,7 @@ const Mappings = Module("mappings", {
             }
 
             const opts = {
-                    completer: function (context, args) completion.userMapping(context, args, modes),
+                    completer: (context, args) => completion.userMapping(context, args, modes),
                     options: [
                         [["<silent>", "<Silent>"],  commands.OPTION_NOARG],
                         [["-urls", "-u"],  commands.OPTION_STRING, regexpValidator, urlsCompleter(modes, true)],
@@ -553,13 +554,13 @@ const Mappings = Module("mappings", {
                     options: [
                         [["-urls", "-u"],  commands.OPTION_STRING, regexpValidator, urlsCompleter(modes)],
                     ],
-                    completer: function (context, args) completion.userMapping(context, args, modes)
+                    completer: (context, args) => completion.userMapping(context, args, modes),
                 });
         }
 
         addMapCommands("",  [modes.NORMAL, modes.VISUAL], "");
 
-        for (let mode in modes.mainModes)
+        for (let mode of modes.mainModes)
             if (mode.char && !commands.get(mode.char + "map"))
                 addMapCommands(
                     mode.char,
@@ -598,7 +599,7 @@ const Mappings = Module("mappings", {
         };
     },
     modes: function () {
-        for (let mode in modes) {
+        for (let mode of modes) {
             this._main[mode] = [];
             this._user[mode] = [];
         }

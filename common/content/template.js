@@ -7,8 +7,8 @@
 /** @scope modules */
 
 const Template = Module("template", {
-    add: function add(a, b) a + b,
-    join: function join(c) function (a, b) a + c + b,
+    add: (a, b) => a + b,
+    join: (c) => (a, b) => a + c + b,
 
     map: function map(iter, func, sep, interruptable) {
         return this.map2(xml, iter, func, sep, interruptable);
@@ -18,7 +18,7 @@ const Template = Module("template", {
             iter = util.Array.itervalues(iter);
         let ret = tag``;
         let n = 0;
-        var op = tag["+="] || tag["+"] ||function (lhs, rhs) tag`${lhs}${rhs}`;
+        var op = tag["+="] || tag["+"] || ((lhs, rhs) => tag`${lhs}${rhs}`);
         for (let i of Iterator(iter)) {
             let val = func(i);
             if (val == undefined || (tag.isEmpty && tag.isEmpty(val)))
@@ -66,26 +66,26 @@ const Template = Module("template", {
                </div>`;
     },
 
-    bookmarkDescription: function (item, text, filter)
-    xml`
+    bookmarkDescription(item, text, filter) {
+    return xml`
         <a href=${item.item.url} highlight="URL">${template.highlightFilter(text || "", filter)}</a>&#160;
         ${
             !(item.extra && item.extra.length) ? "" :
             xml`<span class="extra-info">
                 (${
                     template.map2(xml, item.extra,
-                    function (e) xml`${e[0]}: <span highlight=${e[2]}>${e[1]}</span>`,
+                    e => xml`${e[0]}: <span highlight=${e[2]}>${e[1]}</span>`,
                     xml.cdata`&#xa0;`/* Non-breaking space */)
                 })
             </span>`
         }
-    `,
+    `; },
 
     icon: function (item, text) {
         return xml`<span highlight="CompIcon">${item.icon ? xml`<img src=${item.icon}/>` : ""}</span><span class="td-strut"/>${text}`;
     },
 
-    filter: function (str) xml`<span highlight="Filter">${str}</span>`,
+    filter(str) { return xml`<span highlight="Filter">${str}</span>`; },
 
     // if "processStrings" is true, any passed strings will be surrounded by " and
     // any line breaks are displayed as \n
@@ -118,7 +118,7 @@ const Template = Module("template", {
                 if (/^\[JavaPackage.*\]$/.test(arg))
                     return xml`[JavaPackage]`;
                 if (processStrings && false)
-                    str = template.highlightFilter(str, "\n", function () xml`<span highlight="NonText">^J</span>`);
+                    str = template.highlightFilter(str, "\n", () => xml`<span highlight="NonText">^J</span>`);
                 return xml`<span highlight="Object">${str}</span>`;
             default:
                 return `<unknown type>`;
@@ -138,7 +138,7 @@ const Template = Module("template", {
         for (let item of filterArr) {
             if (!item)
                 continue;
-            let lcstr = String.toLowerCase(str);
+            let lcstr = String(str).toLowerCase();
             let lcfilter = item.toLowerCase();
             let start = 0;
             while ((start = lcstr.indexOf(lcfilter, start)) > -1) {
@@ -160,7 +160,7 @@ const Template = Module("template", {
     },
 
     removeOverlapMatch: function removeOverlapMatch(matchArr) {
-        matchArr.sort(function(a,b) a.pos - b.pos || b.len - a.len); // Ascending start positions
+        matchArr.sort((a,b) => a.pos - b.pos || b.len - a.len); // Ascending start positions
         let resArr = [];
         let offset = -1;
         let last, prev;
@@ -240,7 +240,7 @@ const Template = Module("template", {
                     <th>${title}</th>
                 </tr>
                 ${
-                    this.map2(xml, opts, function (opt) xml`
+                    this.map2(xml, opts, opt => xml`
                     <tr>
                         <td>
                             <span style=${opt.isDefault ? "" : "font-weight: bold"}>${opt.pre}${opt.name}</span><span>${opt.value}</span>
@@ -256,7 +256,7 @@ const Template = Module("template", {
         return this.table2(xml, title, data, indent);
     },
     table2: function table2(tag, title, data, indent) {
-        var body = this.map2(tag, data, function (datum) tag`
+        var body = this.map2(tag, data, datum => tag`
                     <tr>
                        <td style=${"font-weight: bold; min-width: 150px; padding-left: " + (indent || "2ex")}>${datum[0]}</td>
                        <td>${template.maybeXML(datum[1])}</td>
@@ -314,7 +314,7 @@ const Template = Module("template", {
                     }
                     </tr>
                     ${
-                        this.map2(xml, rows, function (row)
+                        this.map2(xml, rows, row =>
                         xml`<tr highlight="CompItem">
                         ${
                             createRow(row)

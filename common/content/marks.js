@@ -32,7 +32,7 @@ const Marks = Module("marks", {
         // FIXME: why does umarks.sort() cause a "Component is not available =
         // NS_ERROR_NOT_AVAILABLE" exception when used here?
         let umarks = Array.from(iter(this._urlMarks));
-        umarks.sort(function (a, b) a[0].localeCompare(b[0]));
+        umarks.sort((a, b) => a[0].localeCompare(b[0]));
 
         return lmarks.concat(umarks);
     },
@@ -90,16 +90,16 @@ const Marks = Module("marks", {
     remove: function (filter) {
         if (!filter) {
             // :delmarks! only deletes a-z marks
-            for (let [mark, ] in this._localMarks)
+            for (let [mark, ] of this._localMarks)
                 this._removeLocalMark(mark);
         }
         else {
             let pattern = RegExp("[" + filter.replace(/\s+/g, "") + "]");
-            for (let [mark, ] in this._urlMarks) {
+            for (let [mark, ] of this._urlMarks) {
                 if (pattern.test(mark))
                     this._removeURLMark(mark);
             }
-            for (let [mark, ] in this._localMarks) {
+            for (let [mark, ] of this._localMarks) {
                 if (pattern.test(mark))
                     this._removeLocalMark(mark);
             }
@@ -166,7 +166,7 @@ const Marks = Module("marks", {
         liberator.assert(marks.length > 0, "No marks set");
 
         if (filter.length > 0) {
-            marks = marks.filter(function (mark) filter.indexOf(mark[0]) >= 0);
+            marks = marks.filter(mark => filter.indexOf(mark[0]) >= 0);
             liberator.assert(marks.length > 0, "No matching marks for: " + JSON.stringify(filter));
         }
 
@@ -186,7 +186,7 @@ const Marks = Module("marks", {
 
     _onPageLoad: function _onPageLoad(event) {
         let win = event.originalTarget.defaultView;
-        for (let [i, mark] in Iterator(this._pendingJumps)) {
+        for (let [i, mark] of Iterator(this._pendingJumps)) {
             if (win && win.location.href == mark.location) {
                 buffer.scrollToPercent(mark.position.x * 100, mark.position.y * 100);
                 this._pendingJumps.splice(i, 1);
@@ -199,7 +199,7 @@ const Marks = Module("marks", {
         let localmark = this._localMarks.get(mark);
         if (localmark) {
             let win = window.content;
-            for (let [i, lmark] in Iterator(localmark)) {
+            for (let [i, lmark] of Iterator(localmark)) {
                 if (lmark.location == win.location.href) {
                     localmark.splice(i, 1);
                     if (localmark.length == 0)
@@ -230,9 +230,9 @@ const Marks = Module("marks", {
                 (("tab" in mark) ? ", tab: " + tabs.index(mark.tab) : "");
     },
 
-    isLocalMark: function isLocalMark(mark) /^['`a-z]$/.test(mark),
+    isLocalMark: mark => /^['`a-z]$/.test(mark),
 
-    isURLMark: function isURLMark(mark) /^[A-Z0-9]$/.test(mark)
+    isURLMark: mark => /^[A-Z0-9]$/.test(mark)
 }, {
     events: function () {
         let appContent = document.getElementById("appcontent");
@@ -287,7 +287,7 @@ const Marks = Module("marks", {
             },
             {
                 bang: true,
-                completer: function (context) completion.mark(context)
+                completer: context => completion.mark(context)
             });
 
         commands.add(["ma[rk]"],
@@ -318,11 +318,11 @@ const Marks = Module("marks", {
 
     completion: function () {
         completion.mark = function mark(context) {
-            function percent(i) Math.round(i * 100);
+            function percent(i) { return Math.round(i * 100); };
 
             // FIXME: Line/Column doesn't make sense with %
             context.title = ["Mark", "Line Column File"];
-            context.keys.description = function ([, m]) percent(m.position.y) + "% " + percent(m.position.x) + "% " + m.location;
+            context.keys.description = ([, m]) => percent(m.position.y) + "% " + percent(m.position.x) + "% " + m.location;
             context.completions = marks.all;
         };
     }

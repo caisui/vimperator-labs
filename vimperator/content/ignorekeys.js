@@ -20,7 +20,7 @@ const IgnoreKeys = Module("ignoreKeys", {
 
     get: function get(filter) {
         let filtered = [];
-        for (let [page, exceptions] in this._ignoredKeys) {
+        for (let [page, exceptions] of this._ignoredKeys) {
             if (!filter || page.indexOf(filter) >= 0)
                 filtered.push([page, exceptions]);
         }
@@ -29,7 +29,7 @@ const IgnoreKeys = Module("ignoreKeys", {
     },
 
     hasIgnoredKeys: function isKeyIgnored(url) {
-        for (let [page, exceptions] in this._ignoredKeys) {
+        for (let [page, exceptions] of this._ignoredKeys) {
             let re = RegExp(page);
             if (re.test(url))
                 return exceptions;
@@ -42,7 +42,7 @@ const IgnoreKeys = Module("ignoreKeys", {
         if (key == ":")
             return false;
 
-        for (let [page, exceptions] in this._ignoredKeys) {
+        for (let [page, exceptions] of this._ignoredKeys) {
             let re = RegExp(page);
             if (re.test(url) && exceptions.indexOf(key) < 0)
                 return true;
@@ -56,7 +56,7 @@ const IgnoreKeys = Module("ignoreKeys", {
             return;
         }
 
-        for (let [page, ] in this._ignoredKeys) {
+        for (let [page, ] of this._ignoredKeys) {
             if (filter == page)
                 this._ignoredKeys.remove(page);
         }
@@ -133,7 +133,7 @@ const IgnoreKeys = Module("ignoreKeys", {
                         {
                             argCount: 1,
                             literal: 0,
-                            completer: function (context, args) completion.ignorekeys(context, args.literalArg || ""),
+                            completer: (context, args) => completion.ignorekeys(context, args.literalArg || ""),
                         })
                 ]
             });

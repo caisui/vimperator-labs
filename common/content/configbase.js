@@ -11,10 +11,10 @@ const ConfigBase = Class(ModuleBase, {
      */
     autocommands: [],
 
-    get browser() window.gBrowser,
-    get tabbrowser() window.gBrowser,
+    get browser() { return window.gBrowser; },
+    get tabbrowser() { return window.gBrowser; },
 
-    get browserModes() [modes.NORMAL],
+    get browserModes() { return [modes.NORMAL]; },
 
     /**
      * @property {Object} Application specific defaults for option values. The
@@ -86,7 +86,7 @@ const ConfigBase = Class(ModuleBase, {
      * @property {number} The height (px) that is available to the output
      *     window.
      */
-    get outputHeight() config.browser.mPanelContainer.boxObject.height,
+    get outputHeight() { return config.browser.mPanelContainer.boxObject.height; },
 
     /**
      * @property {[string]} A list of extra scripts in the liberator or
@@ -105,7 +105,7 @@ const ConfigBase = Class(ModuleBase, {
      * @property {string} The leaf name of any temp files created by
      *     {@link io.createTempFile}.
      */
-    get tempFile() this.name.toLowerCase() + ".tmp",
+    get tempFile() { return this.name.toLowerCase() + ".tmp"; },
 
     updateTitlebar: function () {},
 });

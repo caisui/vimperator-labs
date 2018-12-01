@@ -14,7 +14,7 @@ const ModuleBase = Class("ModuleBase", {
      */
     requires: [],
 
-    toString: function () "[module " + this.constructor.name + "]"
+    toString() { return "[module " + this.constructor.name + "]"; },
 });
 
 /**
@@ -69,7 +69,7 @@ Module.constructors = {};
 window.addEventListener("load", function onload() {
     window.removeEventListener("load", onload, false);
 
-    function dump(str) window.dump(String.replace(str, /\n?$/, "\n").replace(/^/m, Config.prototype.name.toLowerCase() + ": "))
+    function dump(str) { window.dump(String(str).replace(/\n?$/, "\n").replace(/^/m, Config.prototype.name.toLowerCase() + ": ")); };
     const start = Date.now();
     const deferredInit = { load: [] };
     const seen = new Set();
@@ -87,11 +87,13 @@ window.addEventListener("load", function onload() {
                 load(Module.constructors[dep], module.name);
 
             dump("Load" + (isstring(prereq) ? " " + prereq + " dependency: " : ": ") + module.name);
+
             modules[module.name] = module();
             loaded.push(module.name);
 
-            function init(mod, module)
-                function () module.INIT[mod].call(modules[module.name], modules[mod])
+            function init(mod, module) {
+                return () => module.INIT[mod].call(modules[module.name], modules[mod]);
+            }
             for (let mod of loaded) {
                 try {
                     if (mod in module.INIT)
@@ -111,6 +113,7 @@ window.addEventListener("load", function onload() {
                 fn();
         }
         catch (e) {
+            console.error(module&&module.name, e);
             dump("Loading " + (module && module.name) + ": " + e + "\n");
             if (e.stack)
                 dump(e.stack);
@@ -127,7 +130,7 @@ window.addEventListener("load", function onload() {
 
 window.addEventListener("unload", function onunload() {
     window.removeEventListener("unload", onunload, false);
-    for (let [, mod] in iter(modules))
+    for (let [, mod] of iter(modules))
         if (mod instanceof ModuleBase && "destroy" in mod)
             mod.destroy();
 }, false);

@@ -20,7 +20,7 @@
     xmlns:html="http://www.w3.org/1999/xhtml"
     xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
-    <script type="application/x-javascript;version=1.8" src="&liberator.content;liberator-overlay.js"/>
+    <script type="application/x-javascript" src="&liberator.content;liberator-overlay.js"/>
 
     <window id="&liberator.mainWindow;">
         <stringbundleset id="liberator-stringbundles">

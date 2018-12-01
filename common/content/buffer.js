@@ -22,7 +22,7 @@ const Buffer = Module("buffer", {
     init: function () {
         this.pageInfo = {};
 
-        this.addPageInfoSection("f", "Feeds", function (verbose) {
+        this.addPageInfoSection("f", "Feeds", function* (verbose) {
             let doc = config.browser.contentDocument;
 
             const feedTypes = {
@@ -63,7 +63,7 @@ const Buffer = Module("buffer", {
             }
 
             let nFeed = 0;
-            for (let link in util.evaluateXPath(["link[@href and (@rel='feed' or (@rel='alternate' and @type))]"], doc)) {
+            for (let link of util.evaluateXPath(["link[@href and (@rel='feed' or (@rel='alternate' and @type))]"], doc)) {
                 let rel = link.rel.toLowerCase();
                 let feed = { title: link.title, href: link.href, type: link.type || "" };
                 if (isValidFeed(feed, doc.nodePrincipal, rel == "feed")) {
@@ -78,7 +78,7 @@ const Buffer = Module("buffer", {
                 yield nFeed + " feed" + (nFeed > 1 ? "s" : "");
         });
 
-        this.addPageInfoSection("g", "Document", function (verbose) {
+        this.addPageInfoSection("g", "Document", function* (verbose) {
             let doc = config.browser.contentDocument;
 
             // get file size
@@ -137,8 +137,8 @@ const Buffer = Module("buffer", {
             // get meta tag data, sort and put into pageMeta[]
             let metaNodes = config.browser.contentDocument.getElementsByTagName("meta");
 
-            return Array.map(metaNodes, function (node) [(node.name || node.httpEquiv), template.highlightURL(node.content)])
-                        .sort(function (a, b) util.compareIgnoreCase(a[0], b[0]));
+            return Array.map(metaNodes, node => [(node.name || node.httpEquiv), template.highlightURL(node.content)])
+                        .sort((a, b) => util.compareIgnoreCase(a[0], b[0]));
         });
     },
 
@@ -317,7 +317,7 @@ const Buffer = Module("buffer", {
         let stylesheets = window.getAllStyleSheets(config.browser.contentWindow);
 
         return stylesheets.filter(
-            function (stylesheet) /^(screen|all|)$/i.test(stylesheet.media.mediaText) && !/^\s*$/.test(stylesheet.title)
+            stylesheet => /^(screen|all|)$/i.test(stylesheet.media.mediaText) && !/^\s*$/.test(stylesheet.title)
         );
     },
 
@@ -375,13 +375,13 @@ const Buffer = Module("buffer", {
      * @property {Node} The last focused input field in the buffer. Used
      *     by the "gi" key binding.
      */
-    get lastInputField() config.browser.contentDocument.lastInputField || null,
+    get lastInputField() { return config.browser.contentDocument.lastInputField || null; },
     set lastInputField(value) { config.browser.contentDocument.lastInputField = value; },
 
     /**
      * @property {string} The current top-level document's URL.
      */
-    get URL() window.content ? window.content.location.href : config.browser.currentURI.spec,
+    get URL() { return window.content ? window.content.location.href : config.browser.currentURI.spec; },
 
     /**
      * @property {string} The current top-level document's URL, sans any
@@ -406,13 +406,13 @@ const Buffer = Module("buffer", {
     /**
      * @property {number} The buffer's height in pixels.
      */
-    get pageHeight() window.content ? window.content.innerHeight : config.browser.contentWindow.innerHeight,
+    get pageHeight() { return window.content ? window.content.innerHeight : config.browser.contentWindow.innerHeight; },
 
     /**
      * @property {number} The current browser's text zoom level, as a
      *     percentage with 100 as 'normal'. Only affects text size.
      */
-    get textZoom() config.browser.markupDocumentViewer.textZoom * 100,
+    get textZoom() { return config.browser.markupDocumentViewer.textZoom * 100; },
     set textZoom(value) { Buffer.setZoom(value, false); },
 
     /**
@@ -432,13 +432,13 @@ const Buffer = Module("buffer", {
      *     percentage with 100 as 'normal'. Affects text size, as well as
      *     image size and block size.
      */
-    get fullZoom() config.browser.markupDocumentViewer.fullZoom * 100,
+    get fullZoom() { return config.browser.markupDocumentViewer.fullZoom * 100; },
     set fullZoom(value) { Buffer.setZoom(value, true); },
 
     /**
      * @property {string} The current document's title.
      */
-    get title() config.browser.contentTitle,
+    get title() { return config.browser.contentTitle; },
 
     /**
      * @property {number} The buffer's horizontal scroll percentile.
@@ -561,7 +561,7 @@ const Buffer = Module("buffer", {
      */
     followDocumentRelationship: function (rel, ...synonyms) {
         let regexes = options.get(rel + "pattern").values
-                             .map(function (re) RegExp(re, "i"));
+                             .map(re => RegExp(re, "i"));
         synonyms.unshift(rel);
 
         function followFrame(frame) {
@@ -588,10 +588,10 @@ const Buffer = Module("buffer", {
 
             let res = util.evaluateXPath(options.get("hinttags").value, frame.document);
             for (let regex of regexes) {
-                for (let i in util.range(res.snapshotLength, 0, -1)) {
+                for (let i of util.range(res.snapshotLength, 0, -1)) {
                     let elem = res.snapshotItem(i);
                     if (regex.test(elem.textContent) || regex.test(elem.title) ||
-                            Array.some(elem.childNodes, function (child) regex.test(child.alt))) {
+                            Array.some(elem.childNodes, child => regex.test(child.alt))) {
                         buffer.followLink(elem, liberator.CURRENT_TAB);
                         return true;
                     }
@@ -679,13 +679,13 @@ const Buffer = Module("buffer", {
      * @property {nsISelectionController} The current document's selection
      *     controller.
      */
-    get selectionController() Buffer.focusedWindow
+    get selectionController() { return Buffer.focusedWindow
             .QueryInterface(Ci.nsIInterfaceRequestor)
             .getInterface(Ci.nsIWebNavigation)
             .QueryInterface(Ci.nsIDocShell)
             .QueryInterface(Ci.nsIInterfaceRequestor)
             .getInterface(Ci.nsISelectionDisplay)
-            .QueryInterface(Ci.nsISelectionController),
+            .QueryInterface(Ci.nsISelectionController); },
 
     /**
      * Opens the appropriate context menu for <b>elem</b>.
@@ -930,7 +930,7 @@ const Buffer = Module("buffer", {
             let title = content.document.title || "[No Title]";
 
             let info = template.map2(xml, "gf",
-                function (opt) template.map2(xml, buffer.pageInfo[opt][0](), util.identity, ", "),
+                opt => template.map2(xml, buffer.pageInfo[opt][0](), util.identity, ", "),
                 ", ");
 
             if (bookmarks.isBookmarked(this.URL))
@@ -1019,7 +1019,7 @@ const Buffer = Module("buffer", {
     ZOOM_MIN: "ZoomManager" in window && Math.round(ZoomManager.MIN * 100),
     ZOOM_MAX: "ZoomManager" in window && Math.round(ZoomManager.MAX * 100),
 
-    get focusedWindow() this.getFocusedWindow(),
+    get focusedWindow() { return this.getFocusedWindow(); },
     set focusedWindow(win) {
         if (win === document.commandDispatcher.focusedWindow) return;
 
@@ -1083,7 +1083,7 @@ const Buffer = Module("buffer", {
         if (win.scrollMaxX > 0 || win.scrollMaxY > 0)
             return win;
 
-        for (let frame in util.Array.itervalues(win.frames))
+        for (let frame of util.Array.itervalues(win.frames))
             if (frame.scrollMaxX > 0 || frame.scrollMaxY > 0)
                 return frame;
 
@@ -1258,7 +1258,7 @@ const Buffer = Module("buffer", {
             function (args) {
                 let arg = args.literalArg;
 
-                let titles = buffer.alternateStyleSheets.map(function (stylesheet) stylesheet.title);
+                let titles = buffer.alternateStyleSheets.map(stylesheet => stylesheet.title);
 
                 liberator.assert(!arg || titles.indexOf(arg) >= 0,
                     "Invalid argument: " + arg);
@@ -1270,7 +1270,7 @@ const Buffer = Module("buffer", {
             },
             {
                 argCount: "?",
-                completer: function (context) completion.alternateStyleSheet(context),
+                completer: context => completion.alternateStyleSheet(context),
                 literal: 0
             });
 
@@ -1327,7 +1327,7 @@ const Buffer = Module("buffer", {
             {
                 argCount: "?",
                 bang: true,
-                completer: function (context) completion.file(context)
+                completer: context => completion.file(context)
             });
 
         commands.add(["st[op]"],
@@ -1341,7 +1341,7 @@ const Buffer = Module("buffer", {
             {
                 argCount: "?",
                 bang: true,
-                completer: function (context) completion.url(context, "bhf")
+                completer: context => completion.url(context, "bhf")
             });
 
         commands.add(["zo[om]"],
@@ -1444,7 +1444,7 @@ const Buffer = Module("buffer", {
         }
         function* generateGroupList (group, groupName) {
             let hasName = !!groupName;
-            for (let [i, tabItem] in Iterator(group.getChildren())) {
+            for (let [i, tabItem] of Iterator(group.getChildren())) {
                 let index = (tabItem.tab._tPos + 1) + ": ",
                     label = tabItem.tab.label || UNTITLED_LABEL,
                     url = getURLFromTab(tabItem.tab);
@@ -1461,11 +1461,11 @@ const Buffer = Module("buffer", {
             context.keys = { text: "text", description: "url", icon: "icon" };
             context.compare = CompletionContext.Sort.number;
             let process = context.process[0];
-            context.process = [function (item, text)
-                    xml`
+            context.process = [function (item, text) {
+                    return xml`
                         <span highlight="Indicator" style="display: inline-block; width: 2ex; padding-right: 0.5ex; text-align: right">${item.item.indicator}</span>
                         ${ process.call(this, item, text) }
-                    `];
+                    `}];
 
             let tabs;
             if (!flags) {
@@ -1689,7 +1689,7 @@ const Buffer = Module("buffer", {
                                  "iframe"];
 
                     let elements = [];
-                    for (let m in util.evaluateXPath(xpath)) {
+                    for (let m of util.evaluateXPath(xpath)) {
                         if (m.getClientRects().length
                         && (!(m instanceof HTMLIFrameElement) || Editor.windowIsEditable(m.contentWindow)))
                             elements.push(m);
@@ -1824,13 +1824,13 @@ const Buffer = Module("buffer", {
         options.add(["scroll", "scr"],
             "Number of lines to scroll with <C-u> and <C-d> commands",
             "number", 0,
-            { validator: function (value) value >= 0 });
+            { validator: value => value >= 0 });
 
         options.add(["showstatuslinks", "ssli"],
             "Show the destination of the link under the cursor in the status bar",
             "number", 1,
             {
-                completer: function (context) [
+                completer: context => [
                     ["0", "Don't show link destination"],
                     ["1", "Show the link destination in the status line"],
                     ["2", "Show the link destination in the command line"],
@@ -1844,8 +1844,8 @@ const Buffer = Module("buffer", {
                 "Show current website with a minimal style sheet to make it easily accessible",
                 "boolean", false,
                 {
-                    setter: function (value) config.browser.markupDocumentViewer.authorStyleDisabled = value,
-                    getter: function () config.browser.markupDocumentViewer.authorStyleDisabled
+                    setter: value => config.browser.markupDocumentViewer.authorStyleDisabled = value,
+                    getter: () => config.browser.markupDocumentViewer.authorStyleDisabled
                 });
         }
     }

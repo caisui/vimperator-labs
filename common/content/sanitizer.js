@@ -65,10 +65,10 @@ const Sanitizer = Module("sanitizer", {
         return errors;
     },
 
-    get prefNames() util.Array.flatten([this.prefDomain, this.prefDomain2].map(options.allPrefs))
+    get prefNames() { return util.Array.flatten([this.prefDomain, this.prefDomain2].map(options.allPrefs)); }
 }, {
-    argToPref: function (arg) ["commandLine", "offlineApps", "siteSettings"].filter(function (pref) pref.toLowerCase() == arg)[0] || arg,
-    prefToArg: function (pref) pref.toLowerCase().replace(/.*\./, "")
+    argToPref(arg) { return ["commandLine", "offlineApps", "siteSettings"].filter(pref => pref.toLowerCase() == arg)[0] || arg; },
+    prefToArg(pref) { return pref.toLowerCase().replace(/.*\./, ""); },
 }, {
     commands: function () {
         commands.add(["sa[nitize]"],
@@ -96,7 +96,8 @@ const Sanitizer = Module("sanitizer", {
                 else {
                     liberator.assert(args.length > 0, "Argument required");
 
-                    for (let [,elem] in args) {
+                    // XXX: args used __iterator__
+                    for (let elem of args) {
                         if (!options.get("sanitizeitems").isValidValue(elem)) {
                             liberator.echoerr("Invalid data item: " + elem);
                             return;
@@ -131,8 +132,8 @@ const Sanitizer = Module("sanitizer", {
                 options: [
                     [["-timespan", "-t"],
                      commands.OPTION_INT,
-                     function (arg) /^[0-4]$/.test(arg),
-                     function () options.get("sanitizetimespan").completer()]
+                     arg => /^[0-4]$/.test(arg),
+                     () => options.get("sanitizetimespan").completer()]
                  ]
             });
     },
@@ -181,7 +182,7 @@ const Sanitizer = Module("sanitizer", {
         });
 
         // call Sanitize autocommand
-        for (let [name, item] in Iterator(self.items)) {
+        for (let [name, item] of Iterator(self.items)) {
             let arg = Sanitizer.prefToArg(name);
 
             if (item.clear) {
@@ -212,8 +213,8 @@ const Sanitizer = Module("sanitizer", {
 
                     return values;
                 },
-                getter: function () sanitizer.prefNames.filter(function (pref) options.getPref(pref)).map(Sanitizer.prefToArg).join(","),
-                completer: function (value) [
+                getter() { return sanitizer.prefNames.filter(pref => options.getPref(pref)).map(Sanitizer.prefToArg).join(","); },
+                completer() { return [
                     ["cache", "Cache"],
                     ["commandline", "Command-line history"],
                     ["cookies", "Cookies"],
@@ -226,7 +227,7 @@ const Sanitizer = Module("sanitizer", {
                     ["passwords", "Saved passwords"],
                     ["sessions", "Authenticated sessions"],
                     ["sitesettings", "Site preferences"]
-                ]
+                ]; },
             });
 
         options.add(["sanitizetimespan", "sts"],
@@ -237,14 +238,14 @@ const Sanitizer = Module("sanitizer", {
                     options.setPref("privacy.sanitize.timeSpan", value);
                     return value;
                 },
-                getter: function () options.getPref("privacy.sanitize.timeSpan", this.defaultValue),
-                completer: function (value) [
+                getter() { return options.getPref("privacy.sanitize.timeSpan", this.defaultValue); },
+                completer(value) { return [
                     ["0", "Everything"],
                     ["1", "Last hour"],
                     ["2", "Last two hours"],
                     ["3", "Last four hours"],
                     ["4", "Today"]
-                ]
+                ]; },
             });
     }
 });

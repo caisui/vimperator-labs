@@ -41,11 +41,11 @@ const Bookmarks = Module("bookmarks", {
 
         const Bookmark = Struct("url", "title", "icon", "keyword", "tags", "id");
         const Keyword = Struct("keyword", "title", "icon", "url");
-        Bookmark.defaultValue("icon", function () getFavicon(this.url));
-        Bookmark.prototype.__defineGetter__("extra", function () [
+        Bookmark.defaultValue("icon", function () { return getFavicon(this.url)});
+        Bookmark.prototype.__defineGetter__("extra", () => [
                                 ["keyword", this.keyword,         "Keyword"],
                                 ["tags",    this.tags.join(", "), "Tag"]
-                            ].filter(function (item) item[1]));
+                            ].filter(item => item[1]));
 
         const storage = modules.storage;
         function Cache(name, store) {
@@ -55,16 +55,16 @@ const Bookmarks = Module("bookmarks", {
             let bookmarks = [];
             let self = this;
 
-            this.__defineGetter__("name",  function () name);
-            this.__defineGetter__("store", function () store);
-            this.__defineGetter__("bookmarks", function () this.load());
+            this.__defineGetter__("name",  () => name);
+            this.__defineGetter__("store", () => store);
+            this.__defineGetter__("bookmarks", function () { return this.load(); });
 
             this.__defineGetter__("keywords", function () {
                 return self.bookmarks.filter(k => k.keyword)
                                      .map(k => Keyword(k.keyword, k.title, k.icon, k.url));
             });
 
-            this.__iterator__ = function () iter(self.bookmarks);
+            this[Symbol.iterator] = () => iter(self.bookmarks);
 
             function loadBookmark(node) {
                 if (node.uri == null) // How does this happen?
@@ -88,7 +88,7 @@ const Bookmarks = Module("bookmarks", {
 
             function deleteBookmark(id) {
                 let length = bookmarks.length;
-                bookmarks = bookmarks.filter(function (item) item.id != id);
+                bookmarks = bookmarks.filter(item => item.id != id);
                 return bookmarks.length < length;
             }
 
@@ -100,7 +100,7 @@ const Bookmarks = Module("bookmarks", {
                 return root;
             };
 
-            this.isBookmark = function (id) rootFolders.indexOf(self.findRoot(id)) >= 0;
+            this.isBookmark = id => rootFolders.indexOf(self.findRoot(id)) >= 0;
 
             // since we don't use a threaded bookmark loading (by set preload)
             // anymore, is this loading synchronization still needed? --mst
@@ -138,7 +138,7 @@ const Bookmarks = Module("bookmarks", {
                     // close a container after using it!
                     folder.containerOpen = false;
                 }
-                this.__defineGetter__("bookmarks", function () bookmarks);
+                this.__defineGetter__("bookmarks", () => bookmarks);
                 loading = false;
                 return bookmarks;
             };
@@ -167,7 +167,7 @@ const Bookmarks = Module("bookmarks", {
                     if (isAnnotation)
                         return;
 
-                    let bookmark = bookmarks.filter(function (item) item.id == itemId)[0];
+                    let bookmark = bookmarks.find(item => item.id == itemId);
                     if (bookmark) {
                         if (property == "tags")
                             value = tagging.getTagsForURI(util.newURI(bookmark.url), {});
@@ -195,13 +195,13 @@ const Bookmarks = Module("bookmarks", {
         storage.addObserver("bookmark-cache", bookmarkObserver, window);
     },
 
-    get format() ({
+    get format() { return ({
         anchored: false,
         title: ["URL", "Info"],
-        keys: { text: "url", description: "title", icon: function(item) item.icon || DEFAULT_FAVICON,
+        keys: { text: "url", description: "title", icon: item => item.icon || DEFAULT_FAVICON,
                 extra: "extra", tags: "tags", keyword: "keyword" },
         process: [template.icon, template.bookmarkDescription]
-    }),
+    }); },
 
     // TODO: why is this a filter? --djk
     get: function get(filter, tags, maxItems, extra) {
@@ -214,7 +214,7 @@ const Bookmarks = Module("bookmarks", {
         try {
             let uri = util.createURI(url);
             if (!force) {
-                for (let bmark in this._cache) {
+                for (let bmark of this._cache) {
                     if (bmark[0] == uri.spec) {
                         var id = bmark[5];
                         if (title)
@@ -279,7 +279,7 @@ const Bookmarks = Module("bookmarks", {
         }
     },
 
-    isBookmarked: function isBookmarked(url) services.get("bookmarks").isBookmarked(util.newURI(url)),
+    isBookmarked(url) { return services.get("bookmarks").isBookmarked(util.newURI(url)); },
 
     // returns number of deleted bookmarks
     remove: function remove(url) {
@@ -299,7 +299,7 @@ const Bookmarks = Module("bookmarks", {
     // also ensures that each search engine has a Liberator-friendly alias
     getSearchEngines: function getSearchEngines() {
         let searchEngines = [];
-        for (let [, engine] in Iterator(services.get("search").getVisibleEngines({}))) {
+        for (let [, engine] of Iterator(services.get("search").getVisibleEngines({}))) {
             let alias = engine.alias;
             if (!alias || !/^[a-z0-9_-]+$/.test(alias))
                 alias = engine.name.replace(/^\W*([a-zA-Z_-]+).*/, "$1").toLowerCase();
@@ -309,7 +309,7 @@ const Bookmarks = Module("bookmarks", {
             // make sure we can use search engines which would have the same alias (add numbers at the end)
             let newAlias = alias;
             for (let j = 1; j <= 10; j++) { // <=10 is intentional
-                if (!searchEngines.some(function (item) item[0] == newAlias))
+                if (!searchEngines.some(item => item[0] == newAlias))
                     break;
 
                 newAlias = alias + j;
@@ -439,7 +439,7 @@ const Bookmarks = Module("bookmarks", {
         let items = completion.runCompleter("bookmark", filter, maxItems, tags, kw, CompletionContext.Filter.textAndDescription);
 
         if (items.length)
-            return liberator.open(items.map(function (i) i.url), liberator.NEW_TAB);
+            return liberator.open(items.map(i => i.url), liberator.NEW_TAB);
 
         if (filter.length > 0 && tags.length > 0)
             liberator.echoerr("No bookmarks matching tags: \"" + tags + "\" and string: \"" + filter + "\"");
@@ -580,7 +580,7 @@ const Bookmarks = Module("bookmarks", {
                 },
                 options: [[["-title", "-t"],    commands.OPTION_STRING, null, title],
                           [["-tags", "-T"],     commands.OPTION_LIST, null, tags],
-                          [["-keyword", "-k"],  commands.OPTION_STRING, function (arg) /\w/.test(arg)],
+                          [["-keyword", "-k"],  commands.OPTION_STRING, arg => /\w/.test(arg)],
                           [["-folder", "-f"],   commands.OPTION_STRING, null, function (context, args) {
                               return completion.bookmarkFolder(context, args, PlacesUtils.bookmarksMenuFolderId, true, true);
                           }]],
@@ -637,7 +637,7 @@ const Bookmarks = Module("bookmarks", {
             {
                 argCount: "?",
                 bang: true,
-                completer: function completer(context) completion.bookmark(context),
+                completer: context => completion.bookmark(context),
                 literal: 0
             });
     },
@@ -649,7 +649,7 @@ const Bookmarks = Module("bookmarks", {
             function () {
                 let options = {};
 
-                let bmarks = bookmarks.get(buffer.URL).filter(function (bmark) bmark.url == buffer.URL);
+                let bmarks = bookmarks.get(buffer.URL).filter(bmark => bmark.url == buffer.URL);
 
                 if (bmarks.length == 1) {
                     let bmark = bmarks[0];
@@ -701,10 +701,10 @@ const Bookmarks = Module("bookmarks", {
         completion.bookmark = function bookmark(context, tags, extra) {
             context.title = ["Bookmark", "Title"];
             context.format = bookmarks.format;
-            for (let val in Iterator(extra || [])) {
+            for (let val of Iterator(extra || [])) {
                 let [k, v] = val; // Need block scope here for the closure
                 if (v)
-                    context.filters.push(function (item) this._match(v, item[k] || ""));
+                    context.filters.push(item => this._match(v, item[k] || ""));
             }
             // Need to make a copy because set completions() checks instanceof Array,
             // and this may be an Array from another window.
@@ -719,7 +719,7 @@ const Bookmarks = Module("bookmarks", {
 
             context.title = ["Search Keywords"];
             context.completions = keywords.concat(engines);
-            context.keys = { text: 0, description: 1, icon: function(item) item[2] || DEFAULT_FAVICON };
+            context.keys = { text: 0, description: 1, icon: item => item[2] || DEFAULT_FAVICON };
 
             if (!space || noSuggest)
                 return;
@@ -727,7 +727,7 @@ const Bookmarks = Module("bookmarks", {
             context.fork("suggest", keyword.length + space.length, this, "searchEngineSuggest",
                     keyword, true);
 
-            let item = keywords.filter(function (k) k.keyword == keyword)[0];
+            let item = keywords.filter(k => k.keyword == keyword)[0];
             if (item && item.url.indexOf("%s") > -1) {
                 context.fork("keyword/" + keyword, keyword.length + space.length, null, function (context) {
                     context.format = history.format;
@@ -778,7 +778,7 @@ const Bookmarks = Module("bookmarks", {
                 ctxt.title = [engine.description + " Suggestions"];
                 ctxt.compare = CompletionContext.Sort.unsorted;
                 ctxt.incomplete = true;
-                ctxt.match = function (str) str.toLowerCase().indexOf(this.filter.toLowerCase()) === 0;
+                ctxt.match = function (str) { return str.toLowerCase().indexOf(this.filter.toLowerCase()) === 0; };
                 bookmarks.getSuggestions(name, ctxt.filter, function (compl) {
                     ctxt.incomplete = false;
                     ctxt.completions = compl;
@@ -802,7 +802,7 @@ const Bookmarks = Module("bookmarks", {
             let folder = Bookmarks.getBookmarkFolder(folders, rootFolderId);
 
             context.title = ["Bookmarks", folders.join("/") + "/"];
-            context._match = function (filter, str) str.toLowerCase().startsWith(filter.toLowerCase());
+            context._match = (filter, str) => str.toLowerCase().startsWith(filter.toLowerCase());
             let results = [];
 
             if (folders.length === 0) {

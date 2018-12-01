@@ -19,7 +19,7 @@ const Script = Class("Script", {
             return self;
         }
         plugins.contexts[file.path] = this;
-        this.NAME = file.leafName.replace(/\..*/, "").replace(/-([a-z])/g, function (m, n1) n1.toUpperCase());
+        this.NAME = file.leafName.replace(/\..*/, "").replace(/-([a-z])/g, (m, n1) => n1.toUpperCase());
         this.PATH = file.path;
         this.toString = this.toString;
         this.__context__ = this;
@@ -89,7 +89,7 @@ const File = Class("File", {
 
         let array = Array.from(this.iterDirectory());
         if (sort)
-            array.sort(function (a, b) b.isDirectory() - a.isDirectory() ||  String.localeCompare(a.path, b.path));
+            array.sort((a, b) => b.isDirectory() - a.isDirectory() ||  String(a.path).localeCompare(b.path));
         return array;
     },
 
@@ -162,7 +162,7 @@ const File = Class("File", {
             mode = File.MODE_WRONLY | File.MODE_CREATE | File.MODE_TRUNCATE;
 
         if (!perms)
-            perms = 0644;
+            perms = 0o644;
 
         ofstream.init(this, mode, perms, 0);
         let ocstream = getStream(0);
@@ -242,7 +242,7 @@ const File = Class("File", {
      */
     MODE_EXCL: 0x80,
 
-    expandPathList: function (list) list.split(",").map(this.expandPath).join(","),
+    expandPathList(list) { return list.split(",").map(this.expandPath).join(","); },
 
     expandPath: function (path, relative) {
 
@@ -250,11 +250,12 @@ const File = Class("File", {
         // TODO: Vim does not expand variables set to an empty string (and documents it).
         // Kris reckons we shouldn't replicate this 'bug'. --djk
         // TODO: should we be doing this for all paths?
-        function expand(path) path.replace(
+        function expand(path) { return path.replace(
             !liberator.has("Windows") ? /\$(\w+)\b|\${(\w+)}/g
                                  : /\$(\w+)\b|\${(\w+)}|%(\w+)%/g,
-            function (m, n1, n2, n3) services.get("environment").get(n1 || n2 || n3) || m
-        )
+            (m, n1, n2, n3) => services.get("environment").get(n1 || n2 || n3) || m
+        );
+        }
         path = expand(path);
 
         // expand ~
@@ -282,10 +283,10 @@ const File = Class("File", {
             return [];
         // empty list item means the current directory
         return list.replace(/,$/, "").split(",")
-                   .map(function (dir) dir == "" ? io.getCurrentDirectory().path : dir);
+                   .map(dir => dir == "" ? io.getCurrentDirectory().path : dir);
     },
 
-    replacePathSep: function (path) path.replace("/", IO.PATH_SEP, "g"),
+    replacePathSep: path => path.replace("/", IO.PATH_SEP, "g"),
 
     joinPaths: function (head, tail) {
         let path = this(head);
@@ -300,7 +301,8 @@ const File = Class("File", {
             //    path.normalize();
         }
         catch (e) {
-            return { exists: function () false, __noSuchMethod__: function () { throw e; } };
+            // XXX: __noSuchMethod__ is obsoleted
+            return { exists: () => false, __noSuchMethod__: function () { throw e; } };
         }
         return path;
     },
@@ -384,7 +386,7 @@ const IO = Module("io", {
                     downloadList.removeView(downloadListener);
                 });
         }
-        for (let [, plugin] in Iterator(plugins.contexts))
+        for (let [, plugin] of Iterator(plugins.contexts))
             if (plugin.onUnload)
                 plugin.onUnload();
     },
@@ -476,8 +478,8 @@ const IO = Module("io", {
     getRuntimeDirectories: function (name) {
         let dirs = File.getPathsFromPathList(options.runtimepath);
 
-        dirs = dirs.map(function (dir) File.joinPaths(dir, name))
-                   .filter(function (dir) dir.exists() && dir.isDirectory() && dir.isReadable());
+        dirs = dirs.map(dir => File.joinPaths(dir, name))
+                   .filter(dir => dir.exists() && dir.isDirectory() && dir.isReadable());
         return dirs;
     },
 
@@ -518,7 +520,7 @@ const IO = Module("io", {
         let file = services.get("dirsvc").get("TmpD", Ci.nsIFile);
 
         file.append(config.tempFile);
-        file.createUnique(Ci.nsIFile.NORMAL_FILE_TYPE, 0600);
+        file.createUnique(Ci.nsIFile.NORMAL_FILE_TYPE, 0o600);
 
         return File(file);
     },
@@ -674,7 +676,7 @@ lookup:
                 }
                 catch (e) {
                     let err = new Error();
-                    for (let [k, v] in Iterator(e))
+                    for (let [k, v] of Iterator(e))
                         err[k] = v;
                     err.echoerr = xml`${file.path}:${e.lineNumber}: ${e}`;
                     throw err;
@@ -689,7 +691,7 @@ lookup:
 
                 function execute(args) { command.execute(args, special, count, { setFrom: file }); }
 
-                for (let [i, line] in Iterator(lines)) {
+                for (let [i, line] of Object.entries(lines)) {
                     if (heredocEnd) { // we already are in a heredoc
                         if (heredocEnd.test(line)) {
                             execute(heredoc);
@@ -750,6 +752,7 @@ lookup:
             liberator.log("Sourced: " + filename);
         }
         catch (e) {
+            console.error(e);
             liberator.echoerr(e, null, "Sourcing file failed: ");
         }
         finally {
@@ -770,7 +773,7 @@ lookup:
     system: function (command, input) {
         liberator.echomsg("Executing: " + command);
 
-        function escape(str) '"' + str.replace(/[\\"$]/g, "\\$&") + '"'
+        function escape(str) { return '"' + str.replace(/[\\"$]/g, "\\$&") + '"'; }
 
         return this.withTempFiles(function (stdin, stdout, cmd) {
             if (input)
@@ -824,7 +827,7 @@ lookup:
             return func.apply(self || this, args);
         }
         finally {
-            args.forEach(function (f) f.remove(false));
+            args.forEach(f => f.remove(false));
         }
     }
 }, {
@@ -892,7 +895,7 @@ lookup:
                 }
             }, {
                 argCount: "?",
-                completer: function (context) completion.directory(context, true),
+                completer: context => completion.directory(context, true),
                 literal: 0
             });
 
@@ -946,7 +949,7 @@ lookup:
             }, {
                 argCount: "*", // FIXME: should be "?" but kludged for proper error message
                 bang: true,
-                completer: function (context) completion.file(context, true)
+                completer: context => completion.file(context, true)
             });
 
         commands.add(["runt[ime]"],
@@ -974,7 +977,7 @@ lookup:
             }, {
                 literal: 0,
                 bang: true,
-                completer: function (context) completion.file(context, true)
+                completer: context => completion.file(context, true)
             });
 
         commands.add(["!", "run"],
@@ -993,7 +996,7 @@ lookup:
                 // NOTE: Vim doesn't replace ! preceded by 2 or more backslashes and documents it - desirable?
                 // pass through a raw bang when escaped or substitute the last command
                 arg = arg.replace(/(\\)*!/g,
-                    function (m) /^\\(\\\\)*!$/.test(m) ? m.replace("\\!", "!") : m.replace("!", io._lastRunCommand)
+                    m => /^\\(\\\\)*!$/.test(m) ? m.replace("\\!", "!") : m.replace("!", io._lastRunCommand)
                 );
 
                 io._lastRunCommand = arg;
@@ -1007,7 +1010,7 @@ lookup:
             }, {
                 argCount: "?",
                 bang: true,
-                completer: function (context) completion.shellCommand(context),
+                completer: context => completion.shellCommand(context),
                 literal: 0
             });
     },
@@ -1023,25 +1026,25 @@ lookup:
             if (services.get("vc").compare(Application.version, "32") < 0) {
                 context.generate = function () {
                     let names = util.Array(
-                        "more1 more2 more3 more4 more5 static".split(" ").map(function (key)
+                        "more1 more2 more3 more4 more5 static".split(" ").map(key =>
                             options.getPref("intl.charsetmenu.browser." + key).split(', '))
                     ).flatten().uniq();
                     let bundle = document.getElementById("liberator-charset-bundle");
-                    return names.map(function (name) [name, bundle.getString(name.toLowerCase() + ".title")]);
+                    return names.map(name => [name, bundle.getString(name.toLowerCase() + ".title")]);
                 };
             }
             else {
                 context.generate = function () {
                     let {CharsetMenu} = Cu.import("resource://gre/modules/CharsetMenu.jsm", {});
                     let data = CharsetMenu.getData();
-                    return data.pinnedCharsets.concat(data.otherCharsets).map(function (o) [o.value, o.label]);
+                    return data.pinnedCharsets.concat(data.otherCharsets).map(o => [o.value, o.label]);
                 };
             }
         };
 
         completion.directory = function directory(context, full) {
             this.file(context, full);
-            context.filters.push(function ({ item: f }) f.isDirectory());
+            context.filters.push(({ item: f }) => f.isDirectory());
         };
 
         completion.environment = function environment(context) {
@@ -1050,11 +1053,15 @@ lookup:
             lines.pop();
 
             context.title = ["Environment Variable", "Value"];
-            context.generate = function () lines.map(function (line) (line.match(/([^=]+)=(.+)/) || []).slice(1));
+            context.generate = () => lines.map(line => (line.match(/([^=]+)=(.+)/) || []).slice(1));
         };
 
         // TODO: support file:// and \ or / path separators on both platforms
         // if "tail" is true, only return names without any directory components
+
+        const aFolder = Services.vc.compare(Services.appinfo.version, "53") < 0
+            ? "resource://gre/res/html/folder.png"
+            : "resource://content-accessible/html/folder.png";
         completion.file = function file(context, full) {
             // dir == "" is expanded inside readDirectory to the current dir
             let [dir] = context.filter.match(/^(?:.*[\/\\])?/);
@@ -1064,14 +1071,13 @@ lookup:
 
             context.title = [full ? "Path" : "Filename", "Type"];
             context.keys = {
-                text: !full ? "leafName" : function (f) dir + f.leafName,
-                description: function (f) f.isDirectory() ? "Directory" : "File",
-                isdir: function (f) f.exists() && f.isDirectory(),
-                icon: function (f) f.isDirectory() ? "resource://gre/res/html/folder.png"
-                                                             : "moz-icon://" + f.leafName
+                text: !full ? "leafName" : f => dir + f.leafName,
+                description: f => f.isDirectory() ? "Directory" : "File",
+                isdir: f => f.exists() && f.isDirectory(),
+                icon: f => f.isDirectory() ? aFolder : "moz-icon://" + f.leafName
             };
-            context.compare = function (a, b)
-                        b.isdir - a.isdir || String.localeCompare(a.text, b.text);
+            context.compare = (a, b) =>
+                        b.isdir - a.isdir || String(a.text).localeCompare(b.text);
 
             context.match = function (str) {
                 let filter = this.filter;
@@ -1135,22 +1141,22 @@ lookup:
         options.add(["fileencoding", "fenc"],
             "Sets the character encoding of read and written files",
             "string", "UTF-8", {
-                completer: function (context) completion.charset(context)
+                completer: context => completion.charset(context)
             });
         options.add(["cdpath", "cd"],
             "List of directories searched when executing :cd",
             "stringlist", "," + (services.get("environment").get("CDPATH").replace(/[:;]/g, ",") || ","),
-            { setter: function (value) File.expandPathList(value) });
+            { setter: value => File.expandPathList(value) });
 
         options.add(["runtimepath", "rtp"],
             "List of directories searched for runtime files",
             "stringlist", IO.runtimePath,
-            { setter: function (value) File.expandPathList(value) });
+            { setter: value => File.expandPathList(value) });
 
         options.add(["shell", "sh"],
             "Shell to use for executing :! and :run commands",
             "string", shell,
-            { setter: function (value) File.expandPath(value) });
+            { setter: value => File.expandPath(value) });
 
         options.add(["shellcmdflag", "shcf"],
             "Flag passed to shell when executing :! and :run commands",

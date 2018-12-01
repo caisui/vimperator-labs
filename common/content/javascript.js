@@ -20,7 +20,7 @@ const JavaScript = Module("javascript", {
         this._cacheKey = null;
     },
 
-    get completers() JavaScript.completers, // For backward compatibility
+    get completers() { return JavaScript.completers; }, // For backward compatibility
 
     // Some object members are only accessible as function calls
     getKey: function (obj, key) {
@@ -42,7 +42,7 @@ const JavaScript = Module("javascript", {
             function* iterObj(obj, toplevel) {
                 if (Cu.isXrayWrapper(obj)) {
                     if (toplevel) {
-                        yield {get wrappedJSObject() 0};
+                        yield {get wrappedJSObject() { return 0;}};
                     }
                     // according to http://getfirebug.com/wiki/index.php/Using_win.wrappedJSObject
                     // using a wrappedJSObject itself is safe, as potential functions are always
@@ -298,7 +298,7 @@ const JavaScript = Module("javascript", {
 
     // Don't eval any function calls unless the user presses tab.
     _checkFunction: function (start, end, key) {
-        let res = this._functions.some(function (idx) idx >= start && idx < end);
+        let res = this._functions.some(idx => idx >= start && idx < end);
         if (!res || this.context.tabPressed || key in this.cache.eval)
             return false;
         this.context.waitingForTab = true;
@@ -365,9 +365,9 @@ const JavaScript = Module("javascript", {
         context.key = name;
 
         if (last != null)
-            context.quote = [last, function (text) util.escapeString(text.substr(offset), ""), last];
+            context.quote = [last, text => util.escapeString(text.substr(offset), ""), last];
         else // We're not looking for a quoted string, so filter out anything that's not a valid identifier
-            context.filters.push(function (item) /^[a-zA-Z_$][\w$]*$/.test(item.text));
+            context.filters.push(item => /^[a-zA-Z_$][\w$]*$/.test(item.text));
 
         compl.call(self, context, obj);
     },
@@ -377,23 +377,23 @@ const JavaScript = Module("javascript", {
         let orig = compl;
         if (!compl) {
             compl = function (context, obj, recurse) {
-                context.process = [null, function highlight(item, v) template.highlight(v, true)];
+                context.process = [null, (item, v) => template.highlight(v, true)];
                 // Sort in a logical fashion for object keys:
                 //  Numbers are sorted as numbers, rather than strings, and appear first.
                 //  Constants are unsorted, and appear before other non-null strings.
                 //  Other strings are sorted in the default manner.
                 let compare = context.compare;
-                function isnan(item) item != '' && isNaN(item)
+                function isnan(item) { return item != '' && isNaN(item); }
                 context.compare = function (a, b) {
                     if (!isnan(a.item.key) && !isnan(b.item.key))
                         return a.item.key - b.item.key;
                     return isnan(b.item.key) - isnan(a.item.key) || compare(a, b);
                 };
                 if (!context.anchored) // We've already listed anchored matches, so don't list them again here.
-                    context.filters.push(function (item) util.compareIgnoreCase(item.text.substr(0, this.filter.length), this.filter));
+                    context.filters.push(function (item) { return util.compareIgnoreCase(item.text.substr(0, this.filter.length), this.filter); });
                 if (obj == self.cache.evalContext)
                     context.regenerate = true;
-                context.generate = function () self.objectKeys(obj, !recurse);
+                context.generate = () => self.objectKeys(obj, !recurse);
             };
         }
         // TODO: Make this a generic completion helper function.
@@ -410,7 +410,7 @@ const JavaScript = Module("javascript", {
         for (let obj of objects) {
             let name = obj[1] + " (prototypes)";
             this.context.fork(name, this._top.offset, this, this._fill,
-                obj[0], name, function (a, b) compl(a, b, true),
+                obj[0], name, (a, b) => compl(a, b, true),
                 true, filter, last, key.length);
         }
 
@@ -424,7 +424,7 @@ const JavaScript = Module("javascript", {
         for (let obj of objects) {
             let name = obj[1] + " (prototype substrings)";
             this.context.fork(name, this._top.offset, this, this._fill,
-                obj[0], name, function (a, b) compl(a, b, true),
+                obj[0], name, (a, b) => compl(a, b, true),
                 false, filter, last, key.length);
         }
     },
@@ -438,7 +438,7 @@ const JavaScript = Module("javascript", {
         return this.eval(key);
     },
 
-    get cache() this.context.cache,
+    get cache() { return this.context.cache; },
 
     complete: function _complete(context) {
         const self = this;
@@ -455,7 +455,7 @@ const JavaScript = Module("javascript", {
         }
 
         this.context.getCache("eval", Object);
-        this.context.getCache("evalContext", function () Object.create(userContext));
+        this.context.getCache("evalContext", () => Object.create(userContext));
 
         // Okay, have parse stack. Figure out what we're completing.
 
@@ -534,7 +534,7 @@ const JavaScript = Module("javascript", {
                 for (let idx of this._get(-2).comma) {
                     let arg = this._str.substring(prev + 1, idx);
                     prev = idx;
-                    util.memoize(args, i, function () self.eval(arg));
+                    util.memoize(args, i, () => self.eval(arg));
                     ++i;
                 }
                 let key = this._getKey();

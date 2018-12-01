@@ -104,7 +104,7 @@ var Config = Module("config", ConfigBase, {
 
     ignoreKeys: {},
 
-    get mainToolbar() document.getElementById("nav-bar"),
+    get mainToolbar() { return document.getElementById("nav-bar"); },
 
     scripts: [
         "browser.js",
@@ -138,7 +138,7 @@ var Config = Module("config", ConfigBase, {
         tabs:       [["TabsToolbar"],     "Tab bar"]
     },
 
-    get visualbellWindow() getBrowser().mPanelContainer,
+    get visualbellWindow() { return getBrowser().mPanelContainer; },
 
     updateTitlebar: function () {
         config.tabbrowser.updateTitlebar();
@@ -184,7 +184,7 @@ var Config = Module("config", ConfigBase, {
             "Open the sidebar window",
             function (args) {
                 let arg = args.literalArg;
-                function compare(a, b) util.compareIgnoreCase(a, b) == 0
+                function compare(a, b) { return util.compareIgnoreCase(a, b) == 0; }
 
                 // focus if the requested sidebar is already open
                 if (compare(document.getElementById("sidebar-title").value, arg)) {
@@ -194,7 +194,7 @@ var Config = Module("config", ConfigBase, {
 
                 let menu = document.getElementById("viewSidebarMenu");
 
-                for (let [, panel] in Iterator(menu.childNodes)) {
+                for (let [, panel] of Iterator(menu.childNodes)) {
                     if (compare(panel.label, arg)) {
                         panel.doCommand();
                         return;
@@ -229,7 +229,7 @@ var Config = Module("config", ConfigBase, {
                 options: [
                     [["-private", "-p"], commands.OPTION_NOARG],
                 ],
-                completer: function (context) completion.ex(context),
+                completer: context => completion.ex(context),
                 literal: 0
             });
 
@@ -253,8 +253,8 @@ var Config = Module("config", ConfigBase, {
                 options: [
                     [["-private", "-p"], commands.OPTION_NOARG],
                 ],
-                canonicalize: function (cmd) cmd.replace(/^(winop?|winopen?)\b/, 'open'),
-                completer: function (context) completion.url(context),
+                canonicalize: cmd => cmd.replace(/^(winop?|winopen?)\b/, 'open'),
+                completer: context => completion.url(context),
                 literal: 0,
                 privateData: true
             });
@@ -295,7 +295,7 @@ var Config = Module("config", ConfigBase, {
         completion.sidebar = function sidebar(context) {
             let menu = document.getElementById("viewSidebarMenu");
             context.title = ["Sidebar Panel"];
-            context.completions = Array.map(menu.childNodes, function (n) [n.label, ""]);
+            context.completions = Array.map(menu.childNodes, n => [n.label, ""]);
         };
 
         completion.addUrlCompleter("l",
@@ -321,7 +321,7 @@ var Config = Module("config", ConfigBase, {
                         BrowserOffline.toggleOfflineStatus();
                     return value;
                 },
-                getter: function () !services.get("io").offline
+                getter: () => !services.get("io").offline
             });
 
         options.add(["newtaburl", "ntu"],

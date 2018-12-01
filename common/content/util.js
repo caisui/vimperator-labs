@@ -52,7 +52,7 @@ const Util = Module("util", {
         if (obj instanceof Array)
             return obj.slice();
         let newObj = {};
-        for (let [k, v] in Iterator(obj))
+        for (let [k, v] of Iterator(obj))
             newObj[k] = v;
         return newObj;
     },
@@ -77,7 +77,7 @@ const Util = Module("util", {
      * @param {string} b
      * @returns {number}
      */
-    compareIgnoreCase: function compareIgnoreCase(a, b) String.localeCompare(a.toLowerCase(), b.toLowerCase()),
+    compareIgnoreCase: function compareIgnoreCase(a, b) { return String(a).toLowerCase().localeCompare(String(b).toLowerCase()); },
 
     /**
      * Returns an object representing a Node's computed CSS style.
@@ -169,8 +169,8 @@ const Util = Module("util", {
      * @returns {string}
      */
     makeXPath: function makeXPath(nodes) {
-        return util.Array(nodes).map(function (node) [node, "xhtml:" + node]).flatten()
-                                .map(function (node) "//" + node).join(" | ");
+        return util.Array(nodes).map(node => [node, "xhtml:" + node]).flatten()
+                                .map(node => "//" + node).join(" | ");
     },
 
     /**
@@ -273,18 +273,20 @@ const Util = Module("util", {
 
         let zip = services.create("zipWriter");
         zip.open(FILE, io.MODE_CREATE | io.MODE_WRONLY | io.MODE_TRUNCATE);
-        function addURIEntry(file, uri)
-            zip.addEntryChannel(PATH + file, TIME, 9,
-                services.get("io").newChannel(uri, null, null), false)
-        function addDataEntry(file, data) // Inideal to an extreme.
-            addURIEntry(file, "data:text/plain;charset=UTF-8," + encodeURI(data))
+        function addURIEntry(file, uri) {
+            return zip.addEntryChannel(PATH + file, TIME, 9,
+                services.get("io").newChannel(uri, null, null), false);
+        }
+        function addDataEntry(file, data) { // Inideal to an extreme.
+            return addURIEntry(file, "data:text/plain;charset=UTF-8," + encodeURI(data));
+        }
 
         let empty = util.Array.toObject(
             "area base basefont br col frame hr img input isindex link meta param"
             .split(" ").map(Array.concat));
 
         let chrome = {};
-        for (let [file,] in Iterator(services.get("liberator:").FILE_MAP)) {
+        for (let [file,] of Iterator(services.get("liberator:").FILE_MAP)) {
             liberator.open("liberator://help/" + file);
             events.waitForPageLoad();
             let data = [
@@ -302,7 +304,7 @@ const Util = Module("util", {
                         if (node instanceof HTMLHtmlElement)
                             data.push(" xmlns=" + JSON.stringify(XHTML.uri));
 
-                        for (let { name: name, value: value } in util.Array.itervalues(node.attributes)) {
+                        for (let { name: name, value: value } of util.Array.itervalues(node.attributes)) {
                             if (name === "liberator:highlight") {
                                 name = "class";
                                 value = "hl-" + value;
@@ -357,7 +359,7 @@ const Util = Module("util", {
         while ((m = re.exec(data)))
             chrome[m[0]] = m[2];
 
-        for (let [uri, leaf] in Iterator(chrome))
+        for (let [uri, leaf] of Iterator(chrome))
             addURIEntry(leaf, uri);
 
         zip.close();
@@ -431,18 +433,19 @@ const Util = Module("util", {
             let xr = result;
 
             if (asIterator) {
-                result = { iterateNext: function iterateNext() xr.iterateNext()};
+                result = { iterateNext() { return xr.iterateNext(); }};
             } else {
                 result = {
-                    snapshotItem: function snapshotItem(num) xr.snapshotItem(num),
-                    get snapshotLength() xr.snapshotLength,
+                    snapshotItem(num) { return xr.snapshotItem(num); },
+                    get snapshotLength() { return xr.snapshotLength; },
                 };
             }
         }
 
+        result[Symbol.iterator] =
         result.__iterator__ = asIterator
-                            ? function () { let elem; while ((elem = this.iterateNext())) yield elem; }
-                            : function () { for (let i = 0; i < this.snapshotLength; i++) yield this.snapshotItem(i); };
+                            ? function* () { let elem; while ((elem = this.iterateNext())) yield elem; }
+                            : function* () { for (let i = 0; i < this.snapshotLength; i++) yield this.snapshotItem(i); };
 
         return result;
     },
@@ -453,7 +456,7 @@ const Util = Module("util", {
      * @param {Object} k
      * @returns {Object}
      */
-    identity: function identity(k) k,
+    identity(k) { return k; },
 
     /**
      * Returns the intersection of two rectangles.
@@ -462,14 +465,16 @@ const Util = Module("util", {
      * @param {Object} r2
      * @returns {Object}
      */
-    intersection: function (r1, r2) ({
-        get width()  this.right - this.left,
-        get height() this.bottom - this.top,
+    intersection(r1, r2) {
+        return ({
+        get width()  { return this.right - this.left; },
+        get height() { return this.bottom - this.top; },
         left: Math.max(r1.left, r2.left),
         right: Math.min(r1.right, r2.right),
         top: Math.max(r1.top, r2.top),
         bottom: Math.min(r1.bottom, r2.bottom)
-    }),
+    });
+    },
 
     /**
      * Returns the array that results from applying <b>func</b> to each
@@ -481,7 +486,7 @@ const Util = Module("util", {
      */
     map: function map(obj, func) {
         let ary = [];
-        for (let i in Iterator(obj))
+        for (let i of Iterator(obj))
             ary.push(func(i));
         return ary;
     },
@@ -500,7 +505,7 @@ const Util = Module("util", {
          * @param {number} max The maximum constraint.
          * @returns {number}
          */
-        constrain: function constrain(value, min, max) Math.min(Math.max(min, value), max)
+        constrain(value, min, max) { return Math.min(Math.max(min, value), max); },
     },
 
     /**
@@ -547,7 +552,7 @@ const Util = Module("util", {
             try {
                 let tag = xml`${`<${namespaced(elem)} `}${
                     template.map2(xml, elem.attributes,
-                        function (a) xml`${namespaced(a)}=${template.highlight(a.value, true)}`, " ")}${
+                        a => xml`${namespaced(a)}=${template.highlight(a.value, true)}`, " ")}${
                     !elem.firstChild || /^\s*$/.test(elem.firstChild) && !elem.firstChild.nextSibling
                         ? "/>" : `>...</${namespaced(elem)}>`}`;
                 return tag;
@@ -563,7 +568,7 @@ const Util = Module("util", {
         catch (e) {
             obj = "[Object]";
         }
-        obj = template.highlightFilter(util.clip(obj, 150), "\n", !color ? function () "^J" : function () xml`<span highlight="NonText">^J</span>`);
+        obj = template.highlightFilter(util.clip(obj, 150), "\n", !color ? () => "^J" : () => xml`<span highlight="NonText">^J</span>`);
         let string = xml`<span highlight="Title Object">${obj}</span>::<br/>&#xa;`;
 
         let keys = [];
@@ -600,9 +605,9 @@ const Util = Module("util", {
         function compare(a, b) {
             if (!isNaN(a[0]) && !isNaN(b[0]))
                 return a[0] - b[0];
-            return String.localeCompare(a[0], b[0]);
+            return String(a[0]).localeCompare(b[0]);
         }
-        xml["+="](string, template.map2(xml, keys.sort(compare), function (f) f[1]));
+        xml["+="](string, template.map2(xml, keys.sort(compare), f => f[1]));
         return string;
     },
 
@@ -616,7 +621,7 @@ const Util = Module("util", {
      *     negative. @default 1
      * @returns {Iterator(Object)}
      */
-    range: function range(start, end, step) {
+    range: function* range(start, end, step) {
         if (!step)
             step = 1;
         if (step > 0) {
@@ -747,7 +752,7 @@ const Util = Module("util", {
 
             // Hmm. No defsearch? Let the host app deal with it, then.
             return url;
-        }).filter(function(url, i) i === 0 || url);
+        }).filter((url, i) => i === 0 || url);
     },
 
     /**
@@ -784,8 +789,11 @@ const Util = Module("util", {
      */
     xmlToDomForTemplate: function xmlToDomForTemplate(node, doc, nodes) {
         var range = doc.createRange();
+        var {allowUnsafeHTML} = doc;
+        if (!allowUnsafeHTML) doc.allowUnsafeHTML = true;
         var fragment = range.createContextualFragment(
             xml`<div xmlns:ns=${NS} xmlns:xul=${XUL} xmlns=${XHTML}>${node}</div>`.toString());
+        if (!allowUnsafeHTML) doc.allowUnsafeHTML = false;
 
         range.selectNodeContents(fragment.firstChild);
         var dom = range.extractContents();
@@ -849,7 +857,7 @@ const Util = Module("util", {
         init: function (ary) {
             return {
                 __proto__: ary,
-                __iterator__: function () this.iteritems(),
+                __iterator__() { return this.iteritems(); },
                 mapImpl: function (meth, args) {
                     var res = util.Array[meth].apply(null, [this.__proto__].concat(args));
 
@@ -857,10 +865,10 @@ const Util = Module("util", {
                         return util.Array(res);
                     return res;
                 },
-                toString: function () this.__proto__.toString(),
-                concat: function () this.__proto__.concat.apply(this.__proto__, arguments),
-                map: function () this.mapImpl("map", Array.slice(arguments)),
-                flatten: function () this.mapImpl("flatten", arguments)
+                toString() { return this.__proto__.toString(); },
+                concat() { return this.__proto__.concat.apply(this.__proto__, arguments); },
+                map() { return this.mapImpl("map", Array.slice(arguments)); },
+                flatten() { return this.mapImpl("flatten", arguments); },
             };
         }
     }, {
@@ -891,7 +899,7 @@ const Util = Module("util", {
          * @param {Array} ary
          * @returns {Array}
          */
-        compact: function compact(ary) ary.filter(function (item) item != null),
+        compact(ary) { return ary.filter(item => item != null); },
 
         /**
          * Flattens an array, such that all elements of the array are
@@ -901,7 +909,7 @@ const Util = Module("util", {
          * @param {Array} ary
          * @returns {Array}
          */
-        flatten: function flatten(ary) Array.prototype.concat.apply([], ary),
+        flatten(ary) { return Array.prototype.concat.apply([], ary); },
 
         /**
          * Returns an Iterator for an array's values.
@@ -909,7 +917,7 @@ const Util = Module("util", {
          * @param {Array} ary
          * @returns {Iterator(Object)}
          */
-        itervalues: function itervalues(ary) {
+        itervalues: function* itervalues(ary) {
             let length = ary.length;
             for (let i = 0; i < length; i++)
                 yield ary[i];
@@ -921,7 +929,7 @@ const Util = Module("util", {
          * @param {Array} ary
          * @returns {Iterator([{number}, {Object}])}
          */
-        iteritems: function iteritems(ary) {
+        iteritems: function* iteritems(ary) {
             let length = ary.length;
             for (let i = 0; i < length; i++)
                 yield [i, ary[i]];
@@ -936,7 +944,7 @@ const Util = Module("util", {
          * @param {boolean} unsorted
          * @returns {Array}
          */
-        uniq: function uniq(ary, unsorted) [...new Set(unsorted ? ary : ary.sort())],
+        uniq(ary, unsorted) { return [...new Set(unsorted ? ary : ary.sort())]; },
     })
 });
 

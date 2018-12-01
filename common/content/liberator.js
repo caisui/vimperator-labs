@@ -81,10 +81,10 @@ const Liberator = Module("liberator", {
         if (AddonManager) {
             let self = this;
             self._extensions = [];
-            AddonManager.getAddonsByTypes(["extension"], function (e) self._extensions = e);
+            AddonManager.getAddonsByTypes(["extension"], e => self._extensions = e);
             this.onEnabled = this.onEnabling = this.onDisabled = this.onDisabling = this.onInstalled =
                 this.onInstalling = this.onUninstalled = this.onUninstalling =
-                function () AddonManager.getAddonsByTypes(["extension"], function (e) self._extensions = e);
+                () => AddonManager.getAddonsByTypes(["extension"], e => self._extensions = e);
             AddonManager.addAddonListener(this);
         }
     },
@@ -101,17 +101,17 @@ const Liberator = Module("liberator", {
      * @property {number} The current main mode.
      * @see modes#mainModes
      */
-    get mode()      modes.main,
-    set mode(value) modes.main = value,
+    get mode()      { return modes.main;},
+    set mode(value) { return modes.main = value; },
 
-    get menuItems() Liberator.getMenuItems(),
+    get menuItems() { return Liberator.getMenuItems(); },
 
     /** @property {Element} The currently focused element. */
-    get focus() document.commandDispatcher.focusedElement,
+    get focus() { return document.commandDispatcher.focusedElement; },
 
     // TODO: Do away with this getter when support for 1.9.x is dropped
     get extensions() {
-        return this._extensions.map(function (e) ({
+        return this._extensions.map(e => ({
             id: e.id,
             name: e.name,
             description: e.description,
@@ -123,7 +123,7 @@ const Liberator = Module("liberator", {
         }));
       },
 
-    getExtension: function (name) this.extensions.filter(function (e) e.name == name)[0],
+    getExtension(name) { return this.extensions.filter(e => e.name == name)[0]; },
 
     // Global constants
     CURRENT_TAB: [],
@@ -166,7 +166,7 @@ const Liberator = Module("liberator", {
 
     unregisterObserver: function (type, callback) {
         if (type in this.observers)
-            this.observers[type] = this.observers[type].filter(function (c) c != callback);
+            this.observers[type] = this.observers[type].filter(c => c != callback);
     },
 
     // TODO: "zoom": if the zoom value of the current buffer changed
@@ -206,7 +206,7 @@ const Liberator = Module("liberator", {
     /**
      * Creates a new thread.
      */
-    newThread: function () services.get("threadManager").newThread(0),
+    newThread: () => services.get("threadManager").newThread(0),
 
     /**
      * Calls a function asynchronously on a new thread.
@@ -257,7 +257,7 @@ const Liberator = Module("liberator", {
                 msg = util.objectToString(msg);
             return msg;
         }).join(", ");
-        msg = String.replace(msg, /\n?$/, "\n");
+        msg = String(msg).replace(/\n?$/, "\n");
         window.dump(msg.replace(/^./gm, ("config" in modules && config.name.toLowerCase()) + ": $&"));
     },
 
@@ -313,6 +313,7 @@ const Liberator = Module("liberator", {
 
             // For errors, also print the stack trace to our :messages list
             if (str instanceof Error) {
+                console.error("echoerr", str);
                 let stackTrace = xml``;
                 let stackItems = new Error().stack.split('\n');
                 // ignore the first element intentionally!
@@ -485,7 +486,7 @@ const Liberator = Module("liberator", {
      * @param {string} feature The feature name.
      * @returns {boolean}
      */
-    has: function (feature) config.features.has(feature),
+    has: feature => config.features.has(feature),
 
     /**
      * Returns whether the host application has the specified extension
@@ -495,7 +496,7 @@ const Liberator = Module("liberator", {
      * @returns {boolean}
      */
     hasExtension: function (name) {
-        return this._extensions.some(function (e) e.name == name);
+        return this._extensions.some(e => e.name == name);
     },
 
     /**
@@ -512,7 +513,7 @@ const Liberator = Module("liberator", {
         let items = completion._runCompleter("help", topic, null, unchunked).items;
         let partialMatch = null;
 
-        function format(item) item.description + "#" + encodeURIComponent(item.text)
+        function format(item) { return  item.description + "#" + encodeURIComponent(item.text); }
 
         for (let item of items) {
             if (item.text == topic)
@@ -570,7 +571,7 @@ const Liberator = Module("liberator", {
         // Left as an XPCOM instantiation so it can easily be moved
         // into XPCOM code.
         function XSLTProcessor(sheet) {
-            let xslt = Cc["@mozilla.org/document-transformer;1?type=xslt"].createInstance(Ci.nsIXSLTProcessor);
+            let xslt = new window.XSLTProcessor;
             xslt.importStylesheet(httpGet(sheet).responseXML);
             return xslt;
         }
@@ -595,7 +596,7 @@ const Liberator = Module("liberator", {
         // Find the tags in the document.
         function addTags(file, doc) {
             doc = XSLT.transformToDocument(doc);
-            for (let elem in util.evaluateXPath("//xhtml:a/@id", doc))
+            for (let elem of util.evaluateXPath("//xhtml:a/@id", doc))
                 tagMap[elem.value] = file;
         }
 
@@ -606,8 +607,7 @@ const Liberator = Module("liberator", {
         // XMLHttpRequest don't allow access to chrome documents.
         tagMap.all = "all";
         let files = findHelpFile("all").map(function (doc) {
-            return Array.from(iter(util.evaluateXPath("//liberator:include/@href", doc)))
-                        .map(f => f.value);
+            return Array.from(util.evaluateXPath("//liberator:include/@href", doc), f => f.value);
         });
 
         // Scrape the tags from the rest of the help files.
@@ -655,7 +655,7 @@ const Liberator = Module("liberator", {
 
                 ${body}
             </document>`.toString();
-        fileMap.plugins = function () ['text/xml;charset=UTF-8', help];
+        fileMap.plugins = () => ['text/xml;charset=UTF-8', help];
 
         addTags("plugins", httpGet("liberator://help/plugins").responseXML);
     },
@@ -794,7 +794,7 @@ const Liberator = Module("liberator", {
         if (params instanceof Array)
             params = { where: params };
 
-        for (let [opt, flag] in Iterator({ replace: "REPLACE_HISTORY", hide: "BYPASS_HISTORY" }))
+        for (let [opt, flag] of Iterator({ replace: "REPLACE_HISTORY", hide: "BYPASS_HISTORY" }))
             if (params[opt])
                 flags |= Ci.nsIWebNavigation["LOAD_FLAGS_" + flag];
 
@@ -1143,8 +1143,8 @@ const Liberator = Module("liberator", {
         options.add(["fullscreen", "fs"],
             "Show the current window fullscreen",
             "boolean", false, {
-                setter: function (value) window.fullScreen = value,
-                getter: function () window.fullScreen
+                setter: value => window.fullScreen = value,
+                getter: () => window.fullScreen
             });
 
         options.add(["helpfile", "hf"],
@@ -1229,7 +1229,7 @@ const Liberator = Module("liberator", {
                     let actions = {};
                     for (let action of this.parseValues(values)) {
                         if (action === "all" || action === "none") {
-                            for (let [name, toolbar] in Iterator(toolbars)) {
+                            for (let [name, toolbar] of Iterator(toolbars)) {
                                 for (let id of toolbar[0] || [])
                                     actions[id] = action === "none";
                             }
@@ -1263,7 +1263,7 @@ const Liberator = Module("liberator", {
                     }
 
                     // finally we can just execute the actions
-                    for (let [id, collapsed] in Iterator(actions)) {
+                    for (let [id, collapsed] of Iterator(actions)) {
                         let elem = document.getElementById(id);
                         if (!elem)
                             continue;
@@ -1289,7 +1289,7 @@ const Liberator = Module("liberator", {
                 getter: function() {
                     let toolbars = config.toolbars || {};
                     let values = [];
-                    for (let [name, toolbar] in Iterator(toolbars)) {
+                    for (let [name, toolbar] of Iterator(toolbars)) {
                         let elem = document.getElementById(toolbar[0]);
                         if (elem) {
                             let hidingAttribute = elem.getAttribute("type") == "menubar" ? "autohide" : "collapsed";
@@ -1303,7 +1303,7 @@ const Liberator = Module("liberator", {
                     let completions = [["all",  "Show all toolbars"],
                                        ["none", "Hide all toolbars"]];
 
-                    for (let [name, toolbar] in Iterator(toolbars)) {
+                    for (let [name, toolbar] of Iterator(toolbars)) {
                         let elem = document.getElementById(toolbar[0][0]);
                         if (elem) {
                             let hidingAttribute = elem.getAttribute("type") == "menubar" ? "autohide" : "collapsed";
@@ -1328,7 +1328,7 @@ const Liberator = Module("liberator", {
         options.add(["verbose", "vbs"],
             "Define which info messages are displayed",
             "number", 1,
-            { validator: function (value) value >= 0 && value <= 15 });
+            { validator: value => value >= 0 && value <= 15 });
 
         options.add(["visualbell", "vb"],
             "Use visual bell instead of beeping on errors",
@@ -1405,16 +1405,16 @@ const Liberator = Module("liberator", {
                 let arg = args.literalArg;
                 let items = Liberator.getMenuItems();
 
-                liberator.assert(items.some(function (i) i.fullMenuPath == arg),
+                liberator.assert(items.some(i => i.fullMenuPath == arg),
                     "Menu not found: " + arg);
 
-                for (let [, item] in Iterator(items)) {
+                for (let [, item] of Iterator(items)) {
                     if (item.fullMenuPath == arg)
                         item.doCommand();
                 }
             }, {
                 argCount: "1",
-                completer: function (context) completion.menuItem(context),
+                completer: context => completion.menuItem(context),
                 literal: 0
             });
 
@@ -1441,7 +1441,7 @@ const Liberator = Module("liberator", {
                 let file = io.File(args[0]);
 
                 if (file.exists() && file.isReadable() && file.isFile())
-                    AddonManager.getInstallForFile(file, function (a) a.install());
+                    AddonManager.getInstallForFile(file, a => a.install());
                 else {
                     if (file.exists() && file.isDirectory())
                         liberator.echoerr("Cannot install a directory: " + file.path);
@@ -1451,7 +1451,7 @@ const Liberator = Module("liberator", {
             }, {
                 argCount: "1",
                 completer: function (context) {
-                    context.filters.push(function ({ item: f }) f.isDirectory() || /\.xpi$/.test(f.leafName));
+                    context.filters.push(({ item: f }) => f.isDirectory() || /\.xpi$/.test(f.leafName));
                     completion.file(context);
                 }
             });
@@ -1467,13 +1467,13 @@ const Liberator = Module("liberator", {
                 name: "exte[nable]",
                 description: "Enable an extension",
                 action: "enableItem",
-                filter: function ({ item: e }) (!e.enabled || (e.original && e.original.userDisabled))
+                filter: ({ item: e }) => (!e.enabled || (e.original && e.original.userDisabled))
             },
             {
                 name: "extd[isable]",
                 description: "Disable an extension",
                 action: "disableItem",
-                filter: function ({ item: e }) (e.enabled || (e.original && !e.original.userDisabled))
+                filter: ({ item: e }) => (e.enabled || (e.original && !e.original.userDisabled))
             }
         ].forEach(function (command) {
             commands.add([command.name],
@@ -1525,7 +1525,7 @@ const Liberator = Module("liberator", {
                 bang: true,
                 completer: function (context) {
                     completion.extension(context);
-                    context.filters.push(function ({ item: e }) e.options);
+                    context.filters.push(({ item: e }) => e.options);
                 },
                 literal: 0
             });
@@ -1535,7 +1535,7 @@ const Liberator = Module("liberator", {
             "List available extensions",
             function (args) {
                 let filter = args[0] || "";
-                let extensions = liberator.extensions.filter(function (e) e.name.indexOf(filter) >= 0);
+                let extensions = liberator.extensions.filter(e => e.name.indexOf(filter) >= 0);
 
                 if (extensions.length > 0) {
                     let list = template.tabular(
@@ -1580,7 +1580,7 @@ const Liberator = Module("liberator", {
                 }, {
                     argCount: "?",
                     bang: true,
-                    completer: function (context) completion.help(context, unchunked),
+                    completer: context => completion.help(context, unchunked),
                     literal: 0
                 });
         });
@@ -1602,7 +1602,7 @@ const Liberator = Module("liberator", {
                 }
             }, {
                 bang: true,
-                completer: function (context) completion.javascript(context),
+                completer: context => completion.javascript(context),
                 hereDoc: true,
                 literal: 0
             });
@@ -1645,7 +1645,7 @@ const Liberator = Module("liberator", {
                 args = args.string;
 
                 if (args[0] == ":")
-                    var method = function () liberator.execute(args, null, true);
+                    var method = () => liberator.execute(args, null, true);
                 else
                     method = liberator.eval("(function () {" + args + "})");
 
@@ -1736,7 +1736,7 @@ const Liberator = Module("liberator", {
                 }
             }, {
                 argCount: "+",
-                completer: function (context) completion.ex(context),
+                completer: context => completion.ex(context),
                 count: true,
                 literal: 0
             });
@@ -1759,9 +1759,9 @@ const Liberator = Module("liberator", {
             "List all commands, mappings and options with a short description",
             function (args) {
                 let usage = {
-                    mappings: function() template.table2(xml, "Mappings", Array.from(iter(mappings)).map(item => [item.name || item.names[0], item.description]).sort()),
-                    commands: function() template.table2(xml, "Commands", Array.from(iter(commands)).map(item => [item.name || item.names[0], item.description])),
-                    options:  function() template.table2(xml, "Options",  Array.from(iter(options)).map(item => [item.name || item.names[0], item.description]))
+                    mappings: () => template.table2(xml, "Mappings", Array.from(iter(mappings)).map(item => [item.name || item.names[0], item.description]).sort()),
+                    commands: () => template.table2(xml, "Commands", Array.from(iter(commands)).map(item => [item.name || item.names[0], item.description])),
+                    options:  () => template.table2(xml, "Options",  Array.from(iter(options)).map(item => [item.name || item.names[0], item.description]))
                 }
 
                 if (args[0] && !usage[args[0]])
@@ -1804,26 +1804,26 @@ const Liberator = Module("liberator", {
             context.anchored = false;
             context.completions = services.get("liberator:").HELP_TAGS;
             if (unchunked)
-                context.keys = { text: 0, description: function () "all" };
+                context.keys = { text: 0, description: () => "all" };
         };
 
         completion.menuItem = function menuItem(context) {
             context.title = ["Menu Path", "Label"];
             context.anchored = false;
-            context.keys = { text: "fullMenuPath", description: function (item) item.getAttribute("label") };
+            context.keys = { text: "fullMenuPath", description: item => item.getAttribute("label") };
             context.completions = liberator.menuItems;
         };
 
         completion.toolbar = function toolbar(context) {
             let toolbox = document.getElementById("navigator-toolbox");
             context.title = ["Toolbar"];
-            context.keys = { text: function (item) item.getAttribute("toolbarname"), description: function () "" };
+            context.keys = { text: item => item.getAttribute("toolbarname"), description: () => "" };
             context.completions = util.evaluateXPath("./*[@toolbarname]", document, toolbox);
         };
 
         completion.window = function window(context) {
             context.title = ["Window", "Title"]
-            context.keys = { text: function (win) liberator.windows.indexOf(win) + 1, description: function (win) win.document.title };
+            context.keys = { text: win => liberator.windows.indexOf(win) + 1, description: win => win.document.title };
             context.completions = liberator.windows;
         };
     },
@@ -1905,7 +1905,7 @@ const Liberator = Module("liberator", {
             // all gui options to their default values, if they have not been
             // set before by any RC file
             // TODO: Let options specify themselves whether they need to be set at startup!
-            for (let option in options) {
+            for (let option of options) {
                 if (!option.hasChanged && ["popups", "smallicons", "titlestring", "toolbars"].indexOf(option.name) >= 0)
                     option.value = option.defaultValue; // call setter
             }

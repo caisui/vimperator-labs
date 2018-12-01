@@ -17,7 +17,7 @@ const Mail = Module("mail", {
         this._mailSession = Cc["@mozilla.org/messenger/services/session;1"].getService(Ci.nsIMsgMailSession);
         this._notifyFlags = Ci.nsIFolderListener.intPropertyChanged | Ci.nsIFolderListener.event;
         this._mailSession.AddFolderListener(this._folderListener, this._notifyFlags);
-        this._prefs = Cc["@mozilla.org/preferences-service;1"].getService(Ci.nsIPrefService).getBranch(null).QueryInterface(Ci.nsIPrefBranch2);
+        this._prefs = Cc["@mozilla.org/preferences-service;1"].getService(Ci.nsIPrefService).getBranch(null).QueryInterface(Ci.nsIPrefBranch2 || Ci.nsIPrefBranch);
         liberator.open = this.open;
     },
 
@@ -133,9 +133,9 @@ const Mail = Module("mail", {
         return "\"" + recipient + "\"";
     },
 
-    get currentAccount() this.currentFolder.rootFolder,
+    get currentAccount() { return this.currentFolder.rootFolder; },
 
-    get currentFolder() gFolderTreeView.getSelectedFolders()[0],
+    get currentFolder() { return gFolderTreeView.getSelectedFolders()[0]; },
 
     /** @property {nsISmtpServer[]} The list of configured SMTP servers. */
     get smtpServers() {
@@ -218,7 +218,7 @@ const Mail = Module("mail", {
             includeMsgFolders = true;
 
         function* walkChildren(children, prefix) {
-            for (let [, row] in Iterator(children)) {
+            for (let [, row] of Iterator(children)) {
                 let folder = row._folder;
                 let folderString = prefix + "/" +
                                    (row.useServerNameOnly ? folder.server.prettyName : folder.abbreviatedName);
@@ -558,7 +558,7 @@ const Mail = Module("mail", {
             }
         }
 
-        for (let [,target] in Iterator(targets)) {
+        for (let [,target] of Iterator(targets)) {
             openTarget(target, where);
             where = liberator.NEW_BACKGROUND_TAB;
         }
@@ -618,7 +618,7 @@ const Mail = Module("mail", {
             },
             {
                 argCount: "?",
-                completer: function (context) completion.mailFolder(context),
+                completer: context => completion.mailFolder(context),
                 count: true,
                 literal: 0
             });
@@ -650,7 +650,7 @@ const Mail = Module("mail", {
                     addresses = addresses.concat(mailargs.cc);
 
                 // TODO: is there a better way to check for validity?
-                if (addresses.some(function (recipient) !(/\S@\S+\.\S/.test(recipient))))
+                if (addresses.some(recipient => !(/\S@\S+\.\S/.test(recipient))))
                     return void liberator.echoerr("Invalid e-mail address");
 
                 mail.composeNewMail(mailargs);
@@ -668,7 +668,7 @@ const Mail = Module("mail", {
             function (args) { mail._moveOrCopy(true, args.literalArg); },
             {
                 argCount: 1,
-                completer: function (context) completion.mailFolder(context),
+                completer: context => completion.mailFolder(context),
                 literal: 0
             });
 
@@ -677,7 +677,7 @@ const Mail = Module("mail", {
             function (args) { mail._moveOrCopy(false, args.literalArg); },
             {
                 argCount: 1,
-                completer: function (context) completion.mailFolder(context),
+                completer: context => completion.mailFolder(context),
                 literal: 0
             });
 
@@ -688,7 +688,7 @@ const Mail = Module("mail", {
 
         commands.add(["get[messages]"],
             "Check for new messages",
-            function (args) mail.getNewMessages(!args.bang),
+            args => mail.getNewMessages(!args.bang),
             {
                 argCount: "0",
                 bang: true,
@@ -726,7 +726,7 @@ const Mail = Module("mail", {
 
         mappings.add(myModes, ["<Space>"],
             "Scroll message or select next unread one",
-            function () true,
+            () => true,
             { route: true });
 
         mappings.add(myModes, ["t"],
@@ -739,32 +739,32 @@ const Mail = Module("mail", {
 
         mappings.add(myModes, ["j", "<Right>"],
             "Select next message",
-            function (count) { mail.selectMessage(function (msg) true, false, false, false, count); },
+            function (count) { mail.selectMessage(msg => true, false, false, false, count); },
             { count: true });
 
         mappings.add(myModes, ["gj"],
             "Select next message, including closed threads",
-            function (count) { mail.selectMessage(function (msg) true, false, true, false, count); },
+            function (count) { mail.selectMessage(msg => true, false, true, false, count); },
             { count: true });
 
         mappings.add(myModes, ["J", "<Tab>"],
             "Select next unread message",
-            function (count) { mail.selectMessage(function (msg) !msg.isRead, true, true, false, count); },
+            function (count) { mail.selectMessage(msg => !msg.isRead, true, true, false, count); },
             { count: true });
 
         mappings.add(myModes, ["k", "<Left>"],
             "Select previous message",
-            function (count) { mail.selectMessage(function (msg) true, false, false, true, count); },
+            function (count) { mail.selectMessage(msg => true, false, false, true, count); },
             { count: true });
 
         mappings.add(myModes, ["gk"],
             "Select previous message",
-            function (count) { mail.selectMessage(function (msg) true, false, true, true, count); },
+            function (count) { mail.selectMessage(msg => true, false, true, true, count); },
             { count: true });
 
         mappings.add(myModes, ["K"],
             "Select previous unread message",
-            function (count) { mail.selectMessage(function (msg) !msg.isRead, true, true, true, count); },
+            function (count) { mail.selectMessage(msg => !msg.isRead, true, true, true, count); },
             { count: true });
 
         mappings.add(myModes, ["*"],
@@ -772,7 +772,7 @@ const Mail = Module("mail", {
             function (count) {
                 try {
                     let author = gDBView.hdrForFirstSelectedMessage.mime2DecodedAuthor.toLowerCase();
-                    mail.selectMessage(function (msg) msg.mime2DecodedAuthor.toLowerCase().indexOf(author) == 0, true, true, false, count);
+                    mail.selectMessage(msg => msg.mime2DecodedAuthor.toLowerCase().indexOf(author) == 0, true, true, false, count);
                 }
                 catch (e) { liberator.beep(); }
             },
@@ -783,7 +783,7 @@ const Mail = Module("mail", {
             function (count) {
                 try {
                     let author = gDBView.hdrForFirstSelectedMessage.mime2DecodedAuthor.toLowerCase();
-                    mail.selectMessage(function (msg) msg.mime2DecodedAuthor.toLowerCase().indexOf(author) == 0, true, true, true, count);
+                    mail.selectMessage(msg => msg.mime2DecodedAuthor.toLowerCase().indexOf(author) == 0, true, true, true, count);
                 }
                 catch (e) { liberator.beep(); }
             },
@@ -845,12 +845,12 @@ const Mail = Module("mail", {
 
         mappings.add([modes.MESSAGE], ["<Left>"],
             "Select previous message",
-            function (count) { mail.selectMessage(function (msg) true, false, false, true, count); },
+            function (count) { mail.selectMessage(msg => true, false, false, true, count); },
             { count: true });
 
         mappings.add([modes.MESSAGE], ["<Right>"],
             "Select next message",
-            function (count) { mail.selectMessage(function (msg) true, false, false, false, count); },
+            function (count) { mail.selectMessage(msg => true, false, false, false, count); },
             { count: true });
 
         // UNDO/REDO
@@ -903,22 +903,22 @@ const Mail = Module("mail", {
 
         mappings.add(myModes, ["]s"],
             "Select next starred message",
-            function (count) { mail.selectMessage(function (msg) msg.isFlagged, true, true, false, count); },
+            function (count) { mail.selectMessage(msg => msg.isFlagged, true, true, false, count); },
             { count: true });
 
         mappings.add(myModes, ["[s"],
             "Select previous starred message",
-            function (count) { mail.selectMessage(function (msg) msg.isFlagged, true, true, true, count); },
+            function (count) { mail.selectMessage(msg => msg.isFlagged, true, true, true, count); },
             { count: true });
 
         mappings.add(myModes, ["]a"],
             "Select next message with an attachment",
-            function (count) { mail.selectMessage(function (msg) gDBView.db.HasAttachments(msg.messageKey), true, true, false, count); },
+            function (count) { mail.selectMessage(msg => gDBView.db.HasAttachments(msg.messageKey), true, true, false, count); },
             { count: true });
 
         mappings.add(myModes, ["[a"],
             "Select previous message with an attachment",
-            function (count) { mail.selectMessage(function (msg) gDBView.db.HasAttachments(msg.messageKey), true, true, true, count); },
+            function (count) { mail.selectMessage(msg => gDBView.db.HasAttachments(msg.messageKey), true, true, true, count); },
             { count: true });
 
         // FOLDER SWITCHING
@@ -1160,7 +1160,7 @@ const Mail = Module("mail", {
 
                     return value;
                 },
-                completer: function (context) [
+                completer: context => [
                     ["inherit",  "Default View"], // FIXME: correct description?
                     ["classic",  "Classic View"],
                     ["wide",     "Wide View"],
@@ -1173,9 +1173,9 @@ const Mail = Module("mail", {
             "Set the default SMTP server",
             "string", (services.get("smtpService").defaultServer||{}).key, // TODO: how should we handle these persistent external defaults - "inherit" or null?
             {
-                getter: function () services.get("smtpService").defaultServer.key,
+                getter: ()  => services.get("smtpService").defaultServer.key,
                 setter: function (value) {
-                    let server = mail.smtpServers.filter(function (s) s.key == value)[0];
+                    let server = mail.smtpServers.filter(s => s.key == value)[0];
                     services.get("smtpService").defaultServer = server;
                     return value;
                 },
@@ -1189,7 +1189,7 @@ const Mail = Module("mail", {
             "Set the folder mode",
             "string", "smart",
             {
-                getter: function () gFolderTreeView.mode,
+                getter: () => gFolderTreeView.mode,
                 setter: function (value) {
                     gFolderTreeView.mode = value;
                     return value;

@@ -20,29 +20,29 @@ const Abbreviation = Class("Abbreviation", {
 
     modesEqual: function (modes) {
         return (modes.length === this.modes.length) &&
-               (this.modes.every(function (m1) modes.some(function (m2) m1 === m2)));
+               (this.modes.every(m1 => modes.some(m2 => m1 === m2)));
     },
 
-    get text() (this.rhs instanceof Function ? this.rhs() : this.rhs).toString(),
+    get text() { return (this.rhs instanceof Function ? this.rhs() : this.rhs).toString(); },
 
     inMode: function (mode) {
-        return this.modes.some(function (_mode) _mode == mode);
+        return this.modes.some(_mode => _mode == mode);
     },
 
     inModes: function (modes) {
         let self = this;
-        return modes.some(function (mode) self.inMode(mode));
+        return modes.some(mode => self.inMode(mode));
     },
 
     removeMode: function (mode) {
-        this.modes = this.modes.filter(function (m) m != mode);
+        this.modes = this.modes.filter(m => m != mode);
     },
 
-    get modeChar() Abbreviation.modeChar(this.modes)
+    get modeChar() { return Abbreviation.modeChar(this.modes); },
 }, {
     modeChar: function (_modes) {
         let result = "";
-        for ([, mode] in Iterator(_modes))
+        for ([, mode] of Iterator(_modes))
             result += modes.getMode(mode).char;
         if (/^(ic|ci)$/.test(result))
             result = "!";
@@ -137,7 +137,7 @@ const Abbreviations = Module("abbreviations", {
 
         for (let lhs of lhses) {
             let exists = {};
-            for (let [, mabbrevs] in Iterator(this.abbrevs)) {
+            for (let [, mabbrevs] of Iterator(this.abbrevs)) {
                 let abbr = mabbrevs[lhs];
                 if (abbr && !exists[abbr.rhs]) {
                     exists[abbr.rhs] = 1;
@@ -156,7 +156,7 @@ const Abbreviations = Module("abbreviations", {
      * @param {string} lhs The LHS of the abbreviation.
      */
     list: function (modes, lhs) {
-        let list = this.merged.filter(function (abbr) (abbr.inModes(modes) && abbr.lhs.startsWith(lhs)));
+        let list = this.merged.filter(abbr => (abbr.inModes(modes) && abbr.lhs.startsWith(lhs)));
 
         if (!list.length)
             liberator.echomsg("No abbreviations found");
@@ -165,7 +165,7 @@ const Abbreviations = Module("abbreviations", {
             liberator.echo(head.modeChar + "  " + head.lhs + "   " + head.rhs, commandline.FORCE_SINGLELINE); // 2 spaces, 3 spaces
         }
         else {
-            list = list.map(function (abbr) [abbr.modeChar, abbr.lhs, abbr.rhs]);
+            list = list.map(abbr => [abbr.modeChar, abbr.lhs, abbr.rhs]);
             list = template.tabular([{ header: "Mode", style: "padding-left: 1ex"}, { header: "Abbreviation", highlight: "Mapping"}, "Expanded text"], list);
             commandline.echo(list, commandline.HL_NORMAL, commandline.FORCE_MULTILINE);
         }
@@ -209,7 +209,7 @@ const Abbreviations = Module("abbreviations", {
         // TODO: shouldn't all of these have a standard signature (context, args, ...)? --djk
         completion.abbreviation = function abbreviation(context, args, modes) {
             if (args.completeArg == 0) {
-                let abbrevs = abbreviations.merged.filter(function (abbr) abbr.inModes(modes));
+                let abbrevs = abbreviations.merged.filter(abbr => abbr.inModes(modes));
                 context.completions = abbrevs.map(abbr => [abbr.lhs, abbr.rhs]);
             }
         };
@@ -234,8 +234,8 @@ const Abbreviations = Module("abbreviations", {
                     if (rhs) {
                         if (args["-javascript"]) {
                             let expr = rhs;
-                            rhs = function () liberator.eval(expr);
-                            rhs.toString = function () expr;
+                            rhs = () => liberator.eval(expr);
+                            rhs.toString = () => expr;
                         }
                         abbreviations.add(modes, lhs, rhs);
                     }
@@ -273,7 +273,7 @@ const Abbreviations = Module("abbreviations", {
                         return liberator.echoerr("No such abbreviation: " + lhs);
                 }, {
                     argCount: "1",
-                    completer: function (context, args) completion.abbreviation(context, args, modes),
+                    completer: (context, args) => completion.abbreviation(context, args, modes),
                     literal: 0
                 });
 

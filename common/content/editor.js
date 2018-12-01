@@ -599,7 +599,7 @@ const Editor = Module("editor", {
         function addBeginInsertModeMap(keys, commands) {
             mappings.add([modes.TEXTAREA], keys, "",
                 function (count) {
-                    commands.forEach(function (cmd)
+                    commands.forEach(cmd =>
                         editor.executeCommand(cmd, 1));
                     modes.set(modes.INSERT, modes.TEXTAREA);
                 });

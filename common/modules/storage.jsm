@@ -102,12 +102,12 @@ function readFile(file) {
 
 function writeFile(file, data) {
     if (!file.exists())
-        file.create(file.NORMAL_FILE_TYPE, 0600);
+        file.create(file.NORMAL_FILE_TYPE, 0o0600);
 
     let fileStream = Cc["@mozilla.org/network/file-output-stream;1"].createInstance(Ci.nsIFileOutputStream);
     let stream = Cc["@mozilla.org/intl/converter-output-stream;1"].createInstance(Ci.nsIConverterOutputStream);
 
-    fileStream.init(file, 0x20 | 0x08 | 0x02, 0600, 0); // PR_TRUNCATE | PR_CREATE | PR_WRITE
+    fileStream.init(file, 0x20 | 0x08 | 0x02, 0o0600, 0); // PR_TRUNCATE | PR_CREATE | PR_WRITE
     stream.init(fileStream, "UTF-8", 0, 0);
 
     stream.writeString(data);
@@ -160,9 +160,9 @@ var prototype = {
     fireEvent: function (event, arg) { storage.fireEvent(this.name, event, arg); },
     save: function () { savePref(this); },
     init: function (name, store, data, options) {
-        this.__defineGetter__("store", function () store);
-        this.__defineGetter__("name", function () name);
-        for (let [k, v] in Iterator(options))
+        this.__defineGetter__("store", () => store);
+        this.__defineGetter__("name", () => name);
+        for (let [k, v] of Object.entries(options))
             if (this.OPTIONS.indexOf(k) >= 0)
                 this[k] = v;
         this.reload();
@@ -178,7 +178,7 @@ function ObjectStore(name, store, load, options) {
     };
 
     this.init.apply(this, arguments);
-    this.__defineGetter__("serial", function () JSON.stringify(object));
+    this.__defineGetter__("serial", () => JSON.stringify(object));
 
     this.set = function set(key, val) {
         var defined = key in object;
@@ -197,13 +197,17 @@ function ObjectStore(name, store, load, options) {
         return ret;
     };
 
-    this.get = function get(val, default_) val in object ? object[val] : default_;
+    this.get = function get(val, default_) { return val in object ? object[val] : default_; };
 
     this.clear = function () {
         object = {};
     };
 
-    this.__iterator__ = function () Iterator(object);
+    this[Symbol.iterator] = this.__iterator__ = function* () {
+        for(let v of Object.entries(object)) {
+            yield v;
+        }
+    };
 }
 ObjectStore.prototype = prototype;
 
@@ -216,8 +220,8 @@ function ArrayStore(name, store, load, options) {
     };
 
     this.init.apply(this, arguments);
-    this.__defineGetter__("serial", function () JSON.stringify(array));
-    this.__defineGetter__("length", function () array.length);
+    this.__defineGetter__("serial", () => JSON.stringify(array));
+    this.__defineGetter__("length", () => array.length);
 
     this.set = function set(index, value) {
         var orig = array[index];
@@ -259,7 +263,12 @@ function ArrayStore(name, store, load, options) {
         return index >= 0 ? array[index] : array[array.length + index];
     };
 
-    this.__iterator__ = function () Iterator(array);
+    this[Symbol.iterator] = this.__iterator__ = function* () {
+        let i = 0;
+        for(let a of array) {
+            yield [i++, a];
+        }
+    };
 }
 ArrayStore.prototype = prototype;
 
@@ -278,10 +287,10 @@ var storage = {
         if (!(key in keys) || params.reload || this.alwaysReload[key]) {
             if (key in this && !(params.reload || this.alwaysReload[key]))
                 throw Error();
-            let load = function () loadPref(key, params.store, params.type || Object);
+            let load = () => loadPref(key, params.store, params.type || Object);
             keys[key] = new constructor(key, params.store, load, params);
-            timers[key] = new Timer(1000, 10000, function () storage.save(key));
-            this.__defineGetter__(key, function () keys[key]);
+            timers[key] = new Timer(1000, 10000, () => storage.save(key));
+            this.__defineGetter__(key, () => keys[key]);
         }
         return keys[key];
     },
@@ -302,12 +311,12 @@ var storage = {
             var callbackRef = Cu.getWeakReference(callback);
         }
         else {
-            callbackRef = { get: function () callback };
+            callbackRef = { get: () => callback };
         }
         this.removeDeadObservers();
         if (!(key in observers))
             observers[key] = [];
-        if (!observers[key].some(function (o) o.callback.get() == callback))
+        if (!observers[key].some(o => o.callback.get() == callback))
             observers[key].push({ ref: ref && Cu.getWeakReference(ref), callback: callbackRef });
     },
 
@@ -315,20 +324,20 @@ var storage = {
         this.removeDeadObservers();
         if (!(key in observers))
             return;
-        observers[key] = observers[key].filter(function (elem) elem.callback.get() != callback);
+        observers[key] = observers[key].filter(elem => elem.callback.get() != callback);
         if (observers[key].length == 0)
             delete obsevers[key];
     },
 
     removeDeadObservers: function () {
-        for (let [key, ary] in Iterator(observers)) {
-            observers[key] = ary = ary.filter(function (o) o.callback.get() && (!o.ref || o.ref.get() && o.ref.get().liberatorStorageRefs));
+        for (let [key, ary] of Object.entries(observers)) {
+            observers[key] = ary = ary.filter(o => o.callback.get() && (!o.ref || o.ref.get() && o.ref.get().liberatorStorageRefs));
             if (!ary.length)
                 delete observers[key];
         }
     },
 
-    get observers() observers,
+    get observers() { return observers; },
 
     fireEvent: function fireEvent(key, event, arg) {
         if (!(key in this))
@@ -336,7 +345,7 @@ var storage = {
         this.removeDeadObservers();
         // Safe, since we have our own Array object here.
         if (key in observers)
-            for each (let observer in observers[key])
+            for (let observer of observers[key])
                 observer.callback.get()(key, event, arg);
         timers[key].tell();
     },
@@ -351,7 +360,7 @@ var storage = {
     },
 
     saveAll: function storeAll() {
-        for each (let obj in keys)
+        for (let obj of Object.values(keys))
             savePref(obj);
     },
 

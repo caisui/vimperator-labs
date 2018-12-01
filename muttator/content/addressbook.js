@@ -71,13 +71,17 @@ const Addressbook = Module("addressbook", {
             // Now we have to create a new message
             let args = {};
             args.to = addresses.map(
-                function (address) "\"" + address[0].replace(/"/g, "") + " <" + address[1] + ">\""
+                address => "\"" + address[0].replace(/"/g, "") + " <" + address[1] + ">\""
             ).join(", ");
 
             mail.composeNewMail(args);
         }
         else {
-            let list = template.tabular(["Name", "Address"], [[util.clip(address[0], 50), address[1]] for ([, address] in Iterator(addresses))]);
+            let a = [];
+            for (let [, address] of Iterator(addresses)) {
+                a.push(util.clip(address[0], 50), address[1]);
+            }
+            let list = template.tabular(["Name", "Address"], a);
             commandline.echo(list, commandline.HL_NORMAL, commandline.FORCE_MULTILINE);
         }
         return true;

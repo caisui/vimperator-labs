@@ -46,12 +46,12 @@ const CompletionContext = Class("CompletionContext", {
              */
             self.parent = parent;
 
-            ["filters", "keys", "title", "quote"].forEach(function (key)
+            ["filters", "keys", "title", "quote"].forEach(key =>
                 self[key] = parent[key] && util.cloneObject(parent[key]));
-            ["anchored", "compare", "editor", "inputField", "_filter", "filterFunc", "keys", "_process", "top"].forEach(function (key)
+            ["anchored", "compare", "editor", "inputField", "_filter", "filterFunc", "keys", "_process", "top"].forEach(key =>
                 self[key] = parent[key]);
 
-            self.__defineGetter__("value", function () this.top.value);
+            self.__defineGetter__("value", function () { return this.top.value; });
 
             self.offset = parent.offset;
             self.advance(offset);
@@ -75,8 +75,8 @@ const CompletionContext = Class("CompletionContext", {
             if (self != this)
                 return self;
             ["_caret", "contextList", "maxItems", "onUpdate", "selectionTypes", "tabPressed", "updateAsync", "value"].forEach(function (key) {
-                self.__defineGetter__(key, function () this.top[key]);
-                self.__defineSetter__(key, function (val) this.top[key] = val);
+                self.__defineGetter__(key, function () { return this.top[key]; });
+                self.__defineSetter__(key, function (val) { this.top[key] = val; });
             });
         }
         else {
@@ -86,7 +86,7 @@ const CompletionContext = Class("CompletionContext", {
                 this.inputField = input;
                 this.editor = input.editor;
             }
-            this.compare = function (a, b) String.localeCompare(a.text, b.text);
+            this.compare = (a, b) => String(a.text).localeCompare(b.text);
 
             /**
              * @property {function} This function is called when we close
@@ -102,7 +102,7 @@ const CompletionContext = Class("CompletionContext", {
             this.filterFunc = function (items) {
                     let self = this;
                     return this.filters.
-                        reduce(function (res, filter) res.filter(function (item) filter.call(self, item)),
+                        reduce((res, filter) => res.filter(item => filter.call(self, item)),
                                 items);
             };
             /**
@@ -141,13 +141,13 @@ const CompletionContext = Class("CompletionContext", {
              *     changes its completion list. Only called when
              *     {@link #updateAsync} is true.
              */
-            this.onUpdate = function () true;
+            this.onUpdate = () => true;
             /**
              * @property {CompletionContext} The top-level completion context.
              */
             this.top = this;
-            this.__defineGetter__("incomplete", function () this.contextList.some(function (c) c.parent && c.incomplete));
-            this.__defineGetter__("waitingForTab", function () this.contextList.some(function (c) c.parent && c.waitingForTab));
+            this.__defineGetter__("incomplete", function () { return this.contextList.some(c => c.parent && c.incomplete); });
+            this.__defineGetter__("waitingForTab", function () { return this.contextList.some(c => c.parent && c.waitingForTab); });
             this.reset();
         }
         /**
@@ -179,7 +179,7 @@ const CompletionContext = Class("CompletionContext", {
          * Returns a key, as detailed in {@link #keys}.
          * @function
          */
-        this.getKey = function (item, key) (typeof self.keys[key] == "function") ? self.keys[key].call(this, item.item) :
+        this.getKey = (item, key) => (typeof self.keys[key] == "function") ? self.keys[key].call(this, item.item) :
                 key in self.keys ? item.item[self.keys[key]]
                                  : item.item[key];
         return this;
@@ -207,7 +207,7 @@ const CompletionContext = Class("CompletionContext", {
                 if (!context.hasItems)
                     return [];
                 let prefix = self.value.substring(minStart, context.offset);
-                return context.items.map(function (item) ({
+                return context.items.map(item => ({
                     text: prefix + item.text,
                     __proto__: item
                 }));
@@ -227,15 +227,15 @@ const CompletionContext = Class("CompletionContext", {
     },
     // Temporary
     get allSubstrings() {
-        let contexts = this.contextList.filter(function (c) c.hasItems && c.items.length);
-        let minStart = Math.min.apply(Math, contexts.map(function (c) c.offset));
+        let contexts = this.contextList.filter(c => c.hasItems && c.items.length);
+        let minStart = Math.min.apply(Math, contexts.map(c => c.offset));
         let lists = contexts.map(function (context) {
             let prefix = context.value.substring(minStart, context.offset);
-            return context.substrings.map(function (s) prefix + s);
+            return context.substrings.map(s => prefix + s);
         });
 
         let substrings = lists.reduce(
-                function (res, list) res.filter(function (str) list.some(function (s) s.substr(0, str.length) == str)),
+                (res, list) => res.filter(str => list.some(s => s.substr(0, str.length) == str)),
                 lists.pop());
         if (!substrings) // FIXME: How is this undefined?
             return [];
@@ -243,16 +243,16 @@ const CompletionContext = Class("CompletionContext", {
     },
     // Temporary
     get longestAllSubstring() {
-        return this.allSubstrings.reduce(function (a, b) a.length > b.length ? a : b, "");
+        return this.allSubstrings.reduce((a, b) => a.length > b.length ? a : b, "");
     },
 
-    get caret() this._caret - this.offset,
-    set caret(val) this._caret = val + this.offset,
+    get caret() { return this._caret - this.offset; },
+    set caret(val) { this._caret = val + this.offset; },
 
-    get compare() this._compare || function () 0,
-    set compare(val) this._compare = val,
+    get compare() { return this._compare || (() => 0); },
+    set compare(val) { this._compare = val; },
 
-    get completions() this._completions || [],
+    get completions() { return this._completions || []; },
     set completions(items) {
         // Accept a generator
         if ({}.toString.call(items) != '[object Array]') {
@@ -268,24 +268,24 @@ const CompletionContext = Class("CompletionContext", {
             liberator.callInMainThread(function () { self.onUpdate.call(self); });
     },
 
-    get createRow() this._createRow || template.completionRow, // XXX
-    set createRow(createRow) this._createRow = createRow,
+    get createRow() { return this._createRow || template.completionRow; }, // XXX
+    set createRow(createRow) { this._createRow = createRow; },
 
-    get filterFunc() this._filterFunc || util.identity,
-    set filterFunc(val) this._filterFunc = val,
+    get filterFunc() { return this._filterFunc || util.identity; },
+    set filterFunc(val) { this._filterFunc = val; },
 
-    get filter() this._filter != null ? this._filter : this.value.substr(this.offset, this.caret),
+    get filter() { return this._filter != null ? this._filter : this.value.substr(this.offset, this.caret); },
     set filter(val) {
         delete this._ignoreCase;
         return this._filter = val;
     },
 
-    get format() ({
+    get format() { return ({
         anchored: this.anchored,
         title: this.title,
         keys: this.keys,
         process: this.process
-    }),
+    }); },
     set format(format) {
         this.anchored = format.anchored,
         this.title = format.title || this.title;
@@ -293,36 +293,36 @@ const CompletionContext = Class("CompletionContext", {
         this.process = format.process || this.process;
     },
 
-    get message() this._message || (this.waitingForTab ? "Waiting for <Tab>" : null),
-    set message(val) this._message = val,
+    get message() { return this._message || (this.waitingForTab ? "Waiting for <Tab>" : null); },
+    set message(val) { this._message = val; },
 
     get proto() {
         let res = {};
-        for (let i in Iterator(this.keys)) {
+        for (let i of Iterator(this.keys)) {
             let [k, v] = i;
             let _k = "_" + k;
             if (typeof v == "string" && /^[.[]/.test(v))
-                v = eval("(function (i) i" + v + ")");
+                v = eval("i => i" + v + ")");
             if (typeof v == "function")
-                res.__defineGetter__(k, function () _k in this ? this[_k] : (this[_k] = v(this.item)));
+                res.__defineGetter__(k, function () { return  _k in this ? this[_k] : (this[_k] = v(this.item)); });
             else
-                res.__defineGetter__(k, function () _k in this ? this[_k] : (this[_k] = this.item[v]));
-            res.__defineSetter__(k, function (val) this[_k] = val);
+                res.__defineGetter__(k, function () { return _k in this ? this[_k] : (this[_k] = this.item[v])});
+            res.__defineSetter__(k, function (val) { this[_k] = val; });
         }
         return res;
     },
 
-    get regenerate() this._generate && (!this.completions || !this.itemCache[this.key] || this.cache.offset != this.offset),
+    get regenerate() { return this._generate && (!this.completions || !this.itemCache[this.key] || this.cache.offset != this.offset); },
     set regenerate(val) { if (val) delete this.itemCache[this.key]; },
 
-    get generate() !this._generate ? null : function () {
+    get generate() { return !this._generate ? null : function () {
         if (this.offset != this.cache.offset)
             this.itemCache = {};
         this.cache.offset = this.offset;
         if (!this.itemCache[this.key])
             this.itemCache[this.key] = this._generate.call(this) || [];
         return this.itemCache[this.key];
-    },
+    }; },
     set generate(arg) {
         this.hasItems = true;
         this._generate = arg;
@@ -350,7 +350,7 @@ const CompletionContext = Class("CompletionContext", {
         // smart case by default unless overridden above
         return this._ignoreCase = !/[A-Z]/.test(this.filter);
     },
-    set ignoreCase(val) this._ignoreCase = val,
+    set ignoreCase(val) { this._ignoreCase = val; },
 
     get items() {
         if (!this.hasItems || this.backgroundLock)
@@ -373,7 +373,7 @@ const CompletionContext = Class("CompletionContext", {
         delete this._substrings;
 
         let proto = this.proto;
-        let filtered = this.filterFunc(items.map(function (item) ({ __proto__: proto, item: item })));
+        let filtered = this.filterFunc(items.map(item => ({ __proto__: proto, item: item })));
         if (this.maxItems)
             filtered = filtered.slice(0, this.maxItems);
 
@@ -391,13 +391,13 @@ const CompletionContext = Class("CompletionContext", {
     get process() { // FIXME
         let self = this;
         let process = this._process;
-        process = [process[0] || template.icon, process[1] || function (item, k) k];
+        process = [process[0] || template.icon, process[1] || ((item, k) => k)];
         let first = process[0];
         let second = process[1];
         let filter = this.filter;
         if (!this.anchored){
-            process[0] = function (item, text) first.call(self, item, template.highlightFilter(item.text, filter));
-            process[1] = function (item, text) second.call(self, item, item.description, filter);
+            process[0] = (item, text) => first.call(self, item, template.highlightFilter(item.text, filter));
+            process[1] = (item, text) => second.call(self, item, item.description, filter);
         }
         return process;
     },
@@ -412,32 +412,32 @@ const CompletionContext = Class("CompletionContext", {
         if (this._substrings)
             return this._substrings;
 
-        let fixCase = this.ignoreCase ? String.toLowerCase : util.identity;
+        let fixCase = this.ignoreCase ? s => String(s).toLowerCase() : util.identity;
         let text = fixCase(items[0].unquoted || items[0].text);
         let filter = fixCase(this.filter);
         if (this.anchored) {
-            var compare = function compare(text, s) text.substr(0, s.length) == s;
+            var compare = (text, s) => text.substr(0, s.length) == s;
             var substrings = util.map(util.range(filter.length, text.length + 1),
-                function (end) text.substring(0, end));
+                end => text.substring(0, end));
         }
         else {
-            var compare = function compare(text, s) text.indexOf(s) >= 0;
+            var compare = (text, s) => text.indexOf(s) >= 0;
             substrings = [];
             let start = 0;
             let idx;
             let length = filter.length;
             while ((idx = text.indexOf(filter, start)) > -1 && idx < text.length) {
-                for (let end in util.range(idx + length, text.length + 1))
+                for (let end of util.range(idx + length, text.length + 1))
                     substrings.push(text.substring(idx, end));
                 start = idx + 1;
             }
         }
         substrings = items.reduce(
-                function (res, item) res.filter(function (str) compare(fixCase(item.unquoted || item.text), str)),
+                (res, item) => res.filter(str => compare(fixCase(item.unquoted || item.text), str)),
                 substrings);
         let quote = this.quote;
         if (quote)
-            substrings = substrings.map(function (str) quote[0] + quote[1](str));
+            substrings = substrings.map(str => quote[0] + quote[1](str));
         return this._substrings = substrings;
     },
 
@@ -492,7 +492,7 @@ const CompletionContext = Class("CompletionContext", {
         let step = start > end ? -1 : 1;
         start = Math.max(0, start || 0);
         end = Math.min(items.length, end ? end : items.length);
-        return util.map(util.range(start, end, step), function (i) items[i]);
+        return util.map(util.range(start, end, step), i => items[i]);
     },
 
     getRows: function* getRows(start, end, doc) {
@@ -502,7 +502,7 @@ const CompletionContext = Class("CompletionContext", {
         let step = start > end ? -1 : 1;
         start = Math.max(0, start || 0);
         end = Math.min(items.length, end != null ? end : items.length);
-        for (let i in util.range(start, end, step))
+        for (let i of util.range(start, end, step))
             yield [i, cache[i] = cache[i] || util.xmlToDom(self.createRow(items[i]), doc)];
     },
 
@@ -602,9 +602,9 @@ const CompletionContext = Class("CompletionContext", {
             this.value = this._value;
             this._caret = this.value.length;
         }
-        //for (let key in (k for ([k, v] in Iterator(self.contexts)) if (v.offset > this.caret)))
+        //for (let key in (k for ([k, v] of Iterator(self.contexts)) if (v.offset > this.caret)))
         //    delete this.contexts[key];
-        for (let [, context] in Iterator(this.contexts)) {
+        for (let [, context] of Iterator(this.contexts)) {
             context.hasItems = false;
             if (context != context.top)
                 context.incomplete = false;
@@ -627,7 +627,7 @@ const CompletionContext = Class("CompletionContext", {
     }
 }, {
     Sort: {
-        number: function (a, b) parseInt(b) - parseInt(a) || String.localeCompare(a, b),
+        number: (a, b) => parseInt(b) - parseInt(a) || String(a).localeCompare(b),
 
         unsorted: null
     },
@@ -635,7 +635,7 @@ const CompletionContext = Class("CompletionContext", {
     Filter: {
         text: function (item) {
             let text = Array.concat(item.text);
-            for (let [i, str] in Iterator(text)) {
+            for (let [i, str] of Iterator(text)) {
                 if (this.match(String(str))) {
                     item.text = String(text[i]);
                     return true;
@@ -659,7 +659,7 @@ const Completion = Module("completion", {
     init: function () {
     },
 
-    get setFunctionCompleter() JavaScript.setCompleter, // Backward compatibility
+    get setFunctionCompleter() { return JavaScript.setCompleter; }, // Backward compatibility
 
     // FIXME
     _runCompleter: function _runCompleter(name, filter, maxItems, tags, keyword, contextFilter) {
@@ -669,14 +669,14 @@ const Completion = Module("completion", {
             context.filters = [contextFilter];
         let res = context.fork.apply(context, ["run", 0, this, name].concat(Array.slice(arguments, 3)));
         if (res) // FIXME
-            return { items: res.map(function (i) ({ item: i })) };
+            return { items: res.map(i => ({ item: i })) };
         context.wait(true);
         return context.allItems;
     },
 
     runCompleter: function runCompleter(name, filter, maxItems, tags, keyword, contextFilter) {
         return this._runCompleter.apply(this, Array.slice(arguments))
-                   .items.map(function (i) i.item);
+                   .items.map(i => i.item);
     },
 
     listCompleter: function listCompleter(name, filter, maxItems, tags, keyword, contextFilter) {
@@ -694,7 +694,7 @@ const Completion = Module("completion", {
                   let list = template.genericOutput("",
                       xml`<div highlight="Completions">
                           ${ template.completionRow(ctx.title, "CompTitle") }
-                          ${ template.map2(xml, ctx.items, function (item) ctx.createRow(item), null, 100) }
+                          ${ template.map2(xml, ctx.items, item => ctx.createRow(item), null, 100) }
                       </div>`);
                   commandline.echo(list, commandline.HL_NORMAL, commandline.FORCE_MULTILINE);
               });
@@ -750,17 +750,17 @@ const Completion = Module("completion", {
     },
 
     urls: function (context, tags) {
-        let compare = String.localeCompare;
-        let contains = String.indexOf;
+        let compare = (a, b) => String(a).localeCompare(b);
+        let contains = (a, b) => String(a).includes(b);
         if (context.ignoreCase) {
             compare = util.compareIgnoreCase;
-            contains = function (a, b) a && a.toLowerCase().indexOf(b.toLowerCase()) > -1;
+            contains = (a, b) => a && a.toLowerCase().indexOf(b.toLowerCase()) > -1;
         }
 
         if (tags)
-            context.filters.push(function (item) tags.
-                every(function (tag) (item.tags || []).
-                    some(function (t) !compare(tag, t))));
+            context.filters.push(item => tags.
+                every(tag => (item.tags || []).
+                    some(t => !compare(tag, t))));
 
         context.anchored = false;
         if (!context.title)

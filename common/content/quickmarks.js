@@ -38,7 +38,7 @@ const QuickMarks = Module("quickmarks", {
     remove: function remove(filter) {
         let pattern = RegExp("[" + filter.replace(/\s+/g, "") + "]");
 
-        for (let [qmark, ] in this._qmarks) {
+        for (let [qmark, ] of this._qmarks) {
             if (pattern.test(qmark))
                 this._qmarks.remove(qmark);
         }
@@ -76,16 +76,16 @@ const QuickMarks = Module("quickmarks", {
     // FIXME: filter should match that of quickmarks.remove or vice versa
     list: function list(filter) {
         let marks = Array.from(iter(this._qmarks)).map(([k, v]) => k);
-        let lowercaseMarks = marks.filter(function (x) /[a-z]/.test(x)).sort();
-        let uppercaseMarks = marks.filter(function (x) /[A-Z]/.test(x)).sort();
-        let numberMarks    = marks.filter(function (x) /[0-9]/.test(x)).sort();
+        let lowercaseMarks = marks.filter(x => /[a-z]/.test(x)).sort();
+        let uppercaseMarks = marks.filter(x => /[A-Z]/.test(x)).sort();
+        let numberMarks    = marks.filter(x => /[0-9]/.test(x)).sort();
 
         marks = Array.concat(lowercaseMarks, uppercaseMarks, numberMarks);
 
         liberator.assert(marks.length > 0, "No QuickMarks set");
 
         if (filter.length > 0) {
-            marks = marks.filter(function (qmark) filter.indexOf(qmark) >= 0);
+            marks = marks.filter(qmark => filter.indexOf(qmark) >= 0);
             liberator.assert(marks.length >= 0, "No matching QuickMarks for: " + filter);
         }
 

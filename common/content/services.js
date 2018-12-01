@@ -73,7 +73,7 @@ const Services = Module("services", {
             },
         };
 
-        this.addClass("file",       "@mozilla.org/file/local;1",                 Ci.nsILocalFile);
+        this.addClass("file",       "@mozilla.org/file/local;1",                 Ci.nsIFile);
         this.addClass("file:",      "@mozilla.org/network/protocol;1?name=file", Ci.nsIFileProtocolHandler);
         this.addClass("find",       "@mozilla.org/embedcomp/rangefind;1",        Ci.nsIFind);
         this.addClass("process",    "@mozilla.org/process/util;1",               Ci.nsIProcess);
@@ -86,7 +86,7 @@ const Services = Module("services", {
             if (!ifaces)
                 return res.wrappedJSObject;
             ifaces = Array.concat(ifaces);
-            ifaces.forEach(function (iface) res.QueryInterface(iface));
+            ifaces.forEach(iface => res.QueryInterface(iface));
             return res;
         }
         catch (e) {
@@ -120,7 +120,7 @@ const Services = Module("services", {
      */
     addClass: function (name, class_, ifaces) {
         const self = this;
-        return this.classes[name] = function () self._create(class_, ifaces, "createInstance");
+        return this.classes[name] = () => self._create(class_, ifaces, "createInstance");
     },
 
     /**
@@ -149,15 +149,15 @@ const Services = Module("services", {
      *
      * @param {string} name The class's cache key.
      */
-    create: function (name) this.classes[name]()
+    create(name) { return this.classes[name](); },
 },
 window.Services,
 {
     completion: function () {
         JavaScript.setCompleter(this.get, [
-            function () Object.keys(services.jsm).concat(Object.keys(services.services)).map(function(key) [key, ""])
+            () => Object.keys(services.jsm).concat(Object.keys(services.services)).map(key => [key, ""])
         ]);
-        JavaScript.setCompleter(this.create, [function () Object.keys(services.classes).map(c => [c, ""])]);
+        JavaScript.setCompleter(this.create, [() => Object.keys(services.classes).map(c => [c, ""])]);
     }
 });
 

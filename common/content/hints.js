@@ -18,40 +18,40 @@ const Hints = Module("hints", {
         this._reset();
 
         const Mode = Hints.Mode;
-        Mode.defaultValue("tags", function () function () options.hinttags);
-        function extended() options.extendedhinttags
-        function images() "//*[@src]"
-        function anchors() "//*[@id or @name]"
+        Mode.defaultValue("tags", () => () => options.hinttags);
+        function extended() { return options.extendedhinttags; }
+        function images() { return "//*[@src]"; }
+        function anchors() { return "//*[@id or @name]"; }
 
         this._hintModes = {
-            ";": Mode("Focus hint",                         function (elem) buffer.focusElement(elem),                             extended),
-            "?": Mode("Show information for hint",          function (elem) buffer.showElementInfo(elem),                          extended),
-            s: Mode("Save link",                            function (elem) buffer.saveLink(elem, true)),
-            S: Mode("Save object",                          function (elem) buffer.saveLink(elem, true),                           images),
-            a: Mode("Save link with prompt",                function (elem) buffer.saveLink(elem, false)),
-            A: Mode("Save object with prompt",              function (elem) buffer.saveLink(elem, false),                          images),
-            f: Mode("Focus frame",                          function (elem) Buffer.focusedWindow = elem.ownerDocument.defaultView, function () util.makeXPath(["body"])),
-            o: Mode("Follow hint",                          function (elem) buffer.followLink(elem, liberator.CURRENT_TAB)),
-            t: Mode("Follow hint in a new tab",             function (elem) buffer.followLink(elem, liberator.NEW_TAB)),
-            b: Mode("Follow hint in a background tab",      function (elem) buffer.followLink(elem, liberator.NEW_BACKGROUND_TAB)),
-            w: Mode("Follow hint in a new window",          function (elem) buffer.followLink(elem, liberator.NEW_WINDOW),         extended),
+            ";": Mode("Focus hint",                         elem => buffer.focusElement(elem),                             extended),
+            "?": Mode("Show information for hint",          elem => buffer.showElementInfo(elem),                          extended),
+            s: Mode("Save link",                            elem => buffer.saveLink(elem, true)),
+            S: Mode("Save object",                          elem => buffer.saveLink(elem, true),                           images),
+            a: Mode("Save link with prompt",                elem => buffer.saveLink(elem, false)),
+            A: Mode("Save object with prompt",              elem => buffer.saveLink(elem, false),                          images),
+            f: Mode("Focus frame",                          elem => Buffer.focusedWindow = elem.ownerDocument.defaultView, () => util.makeXPath(["body"])),
+            o: Mode("Follow hint",                          elem => buffer.followLink(elem, liberator.CURRENT_TAB)),
+            t: Mode("Follow hint in a new tab",             elem => buffer.followLink(elem, liberator.NEW_TAB)),
+            b: Mode("Follow hint in a background tab",      elem => buffer.followLink(elem, liberator.NEW_BACKGROUND_TAB)),
+            w: Mode("Follow hint in a new window",          elem => buffer.followLink(elem, liberator.NEW_WINDOW),         extended),
             F: Mode("Open multiple hints in tabs",          followAndReshow),
-            O: Mode("Generate an ':open URL' using hint",   function (elem, loc) commandline.open("", "open " + loc, modes.EX)),
-            T: Mode("Generate a ':tabopen URL' using hint", function (elem, loc) commandline.open("", "tabopen " + loc, modes.EX)),
-            W: Mode("Generate a ':winopen URL' using hint", function (elem, loc) commandline.open("", "winopen " + loc, modes.EX)),
-            v: Mode("View hint source",                     function (elem, loc) buffer.viewSource(loc, false),                    extended),
-            V: Mode("View hint source in external editor",  function (elem, loc) buffer.viewSource(loc, true),                     extended),
-            y: Mode("Yank hint location",                   function (elem, loc) util.copyToClipboard(loc, true)),
-            Y: Mode("Yank hint description",                function (elem) util.copyToClipboard(elem.textContent || "", true),    extended),
+            O: Mode("Generate an ':open URL' using hint",   (elem, loc) => commandline.open("", "open " + loc, modes.EX)),
+            T: Mode("Generate a ':tabopen URL' using hint", (elem, loc) => commandline.open("", "tabopen " + loc, modes.EX)),
+            W: Mode("Generate a ':winopen URL' using hint", (elem, loc) => commandline.open("", "winopen " + loc, modes.EX)),
+            v: Mode("View hint source",                     (elem, loc) => buffer.viewSource(loc, false),                    extended),
+            V: Mode("View hint source in external editor",  (elem, loc) => buffer.viewSource(loc, true),                     extended),
+            y: Mode("Yank hint location",                   (elem, loc) => util.copyToClipboard(loc, true)),
+            Y: Mode("Yank hint description",                elem => util.copyToClipboard(elem.textContent || "", true),    extended),
             "#": Mode("Yank hint anchor URL",               function (elem) {
                 let uri = elem.ownerDocument.documentURIObject.clone();
                 uri.ref = elem.id || elem.name;
                 util.copyToClipboard(uri.spec, true);
             }, anchors),
-            c: Mode("Open context menu",                    function (elem) buffer.openContextMenu(elem),                          extended),
-            i: Mode("Show media object",                    function (elem) liberator.open(elem.src),                              images),
-            I: Mode("Show media object in a new tab",       function (elem) liberator.open(elem.src, liberator.NEW_TAB),           images),
-            x: Mode("Show hint's title or alt text",        function (elem) liberator.echo(elem.title ? "title: " + elem.title : "alt: " + elem.alt), function() "//*[@title or @alt]")
+            c: Mode("Open context menu",                    elem => buffer.openContextMenu(elem),                          extended),
+            i: Mode("Show media object",                    elem => liberator.open(elem.src),                              images),
+            I: Mode("Show media object in a new tab",       elem => liberator.open(elem.src, liberator.NEW_TAB),           images),
+            x: Mode("Show hint's title or alt text",        elem => liberator.echo(elem.title ? "title: " + elem.title : "alt: " + elem.alt), () => "//*[@title or @alt]")
         };
 
         /**
@@ -376,7 +376,7 @@ const Hints = Module("hints", {
         }
 
         // also _generate hints for frames
-        for (let frame in util.Array.itervalues(win.frames)) {
+        for (let frame of util.Array.itervalues(win.frames)) {
             elem = frame.frameElement;
             if (!this._isVisible(elem, screen)) continue;
             let rect = elem.getBoundingClientRect();
@@ -517,7 +517,7 @@ const Hints = Module("hints", {
             let css = [];
             // FIXME: Broken for imgspans.
             for (let { doc } of this._docs) {
-                for (let elem in util.evaluateXPath("//*[@liberator:highlight and @number]", doc)) {
+                for (let elem of util.evaluateXPath("//*[@liberator:highlight and @number]", doc)) {
                     let group = elem.getAttributeNS(NS.uri, "highlight");
                     css.push(highlight.selector(group) + "[number=" + JSON.stringify(elem.getAttribute("number")) + "] { " + elem.style.cssText + " }");
                 }
@@ -552,7 +552,7 @@ const Hints = Module("hints", {
                 hints.push(elem);
             while (elem = hints.pop())
                 elem.parentNode.removeChild(elem);
-            for (let i in util.range(start, end + 1)) {
+            for (let i of util.range(start, end + 1)) {
                 let hint = this._pageHints[i];
                 if (!timeout || hint.elem != firstElem)
                     hint.elem.removeAttributeNS(NS.uri, "highlight");
@@ -591,7 +591,7 @@ const Hints = Module("hints", {
         return num;
     },
 
-    _isHintNumber: function (key) options.hintchars.indexOf(key) >= 0,
+    _isHintNumber: key => options.hintchars.indexOf(key) >= 0,
 
     /**
      * Finish hinting.
@@ -623,7 +623,7 @@ const Hints = Module("hints", {
         if (!followFirst) {
             let firstHref = this._validHints[0].getAttribute("href") || null;
             if (firstHref) {
-                if (this._validHints.some(function (e) e.getAttribute("href") != firstHref))
+                if (this._validHints.some(e => e.getAttribute("href") != firstHref))
                     return false;
             }
             else if (this._validHints.length > 1)
@@ -712,7 +712,7 @@ const Hints = Module("hints", {
          * @param {string} str The string to split.
          * @returns {Array(string)} The lowercased splits of the splitting.
          */
-        function tokenize(pat, str) str.split(pat).map(String.toLowerCase)
+        function tokenize(pat, str) { return str.split(pat).map(s => String(s).toLowerCase()); }
 
         /**
          * Get a hint matcher for hintmatching=contains
@@ -730,7 +730,7 @@ const Hints = Module("hints", {
             let tokens = tokenize(/\s+/, hintString);
             return function (linkText) {
                 linkText = linkText.toLowerCase();
-                return tokens.every(function (token) indexOf(linkText, token) >= 0);
+                return tokens.every(token => indexOf(linkText, token) >= 0);
             };
         } //}}}
 
@@ -892,7 +892,7 @@ const Hints = Module("hints", {
             };
         }
 
-        let indexOf = String.indexOf;
+        let indexOf = (s, ...a) => String(s).indexOf(...a);
         if (options.get("hintmatching").has("transliterated"))
             indexOf = Hints.indexOf;
 
@@ -979,7 +979,7 @@ const Hints = Module("hints", {
             }, {
                 promptHighlight: "Normal",
                 completer: function (context) {
-                    context.compare = function () 0;
+                    context.compare = () => 0;
                     context.completions = Object.keys(hints._hintModes).map(k => [k, hints._hintModes[k].prompt]);
                 },
                 onChange: function (str) {
@@ -1202,9 +1202,9 @@ const Hints = Module("hints", {
             [0xff41, 0xff5a, "a"],
         ].map(function (a) {
             if (typeof a[2] == "string")
-                a[3] = function (chr) String.fromCharCode(this[2].charCodeAt(0) + chr - this[0]);
+                a[3] = function (chr) { return String.fromCharCode(this[2].charCodeAt(0) + chr - this[0]); };
             else
-                a[3] = function (chr) this[2][(chr - this[0]) % this[2].length];
+                a[3] = function (chr) { return this[2][(chr - this[0]) % this[2].length]; };
             return a;
         });
 
@@ -1308,7 +1308,7 @@ const Hints = Module("hints", {
         options.add(["hinttimeout", "hto"],
             "Timeout before automatically following a non-unique numerical hint",
             "number", 0,
-            { validator: function (value) value >= 0 });
+            { validator: value => value >= 0 });
 
         options.add(["followhints", "fh"],
             // FIXME: this description isn't very clear but I can't think of a
@@ -1316,7 +1316,7 @@ const Hints = Module("hints", {
             "Change the behaviour of <Return> in hint mode",
             "number", 0,
             {
-                completer: function () [
+                completer: () => [
                     ["0", "Follow the first hint as soon as typed text uniquely identifies it. Follow the selected hint on <Return>."],
                     ["1", "Follow the selected hint on <Return>."],
                     ["2", "Follow the selected hint on <Return> only it's been <Tab>-selected."]
@@ -1327,7 +1327,7 @@ const Hints = Module("hints", {
             "How links are matched",
             "stringlist", "contains",
             {
-                completer: function (context) [
+                completer: context => [
                     ["contains",       "The typed characters are split on whitespace. The resulting groups must all appear in the hint."],
                     ["wordstartswith", "The typed characters are split on whitespace. The resulting groups must all match the beginnings of words, in order."],
                     ["firstletters",   "Behaves like wordstartswith, but all groups much match a sequence of words."],
@@ -1346,7 +1346,7 @@ const Hints = Module("hints", {
                         hints._showHints();
                     return value;
                 },
-                completer: function (context) [
+                completer: context => [
                     ["0123456789", "Numbers only"],
                     ["hjklasdf", "Home row"],
                     ["dhtnaoeu", "Home row (Dvorak)"],
@@ -1358,7 +1358,7 @@ const Hints = Module("hints", {
                     let prev;
                     let list = arg.split("");
                     list.sort();
-                    let ret = list.some(function (n) prev == (prev=n));
+                    let ret = list.some(n => prev == (prev=n));
 
                     return !ret && arg.length > 1;
                 }
@@ -1372,7 +1372,7 @@ const Hints = Module("hints", {
             "How text input fields are hinted",
             "stringlist", "label,value",
             {
-                completer: function (context) [
+                completer: context => [
                     ["value", "Match against the value contained by the input field"],
                     ["label", "Match against the value of a label for the input field, if one can be found"],
                     ["name",  "Match against the name of an input field, only if neither a name or value could be found."]

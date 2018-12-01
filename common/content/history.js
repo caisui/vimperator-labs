@@ -6,9 +6,9 @@
 const History = Module("history", {
     requires: ["config"],
 
-    get format() bookmarks.format,
+    get format() { return bookmarks.format; },
 
-    get service() services.get("history"),
+    get service() { return services.get("history"); },
 
     get: function get(filter, maxItems) {
         // no query parameters will get all history
@@ -53,10 +53,10 @@ const History = Module("history", {
         let sh = window.getWebNavigation().sessionHistory;
         let obj = [];
         obj.index = sh.index;
-        obj.__iterator__ = function () util.Array.iteritems(this);
-        for (let i in util.range(0, sh.count)) {
+        obj.__iterator__ = function () { return util.Array.iteritems(this); };
+        for (let i of util.range(0, sh.count)) {
             obj[i] = { index: i, __proto__: sh.getEntryAtIndex(i, false) };
-            util.memoize(obj[i], "icon", function (obj) bookmarks.getFavicon(obj.URI));
+            util.memoize(obj[i], "icon", obj => bookmarks.getFavicon(obj.URI));
         }
         return obj;
     },
@@ -106,7 +106,7 @@ const History = Module("history", {
         let items = completion.runCompleter("history", filter, maxItems, null, null, CompletionContext.Filter.textAndDescription);
 
         if (items.length)
-            return liberator.open(items.map(function (i) i.url), liberator.NEW_TAB);
+            return liberator.open(items.map(i => i.url), liberator.NEW_TAB);
 
         if (filter.length > 0)
             liberator.echoerr("No matching history items for: " + filter);
@@ -130,7 +130,7 @@ const History = Module("history", {
                         if (/^\d+(:|$)/.test(url) && sh.index - parseInt(url) in sh)
                             return void window.getWebNavigation().gotoIndex(sh.index - parseInt(url));
 
-                        for (let [i, ent] in Iterator(sh.slice(0, sh.index).reverse()))
+                        for (let [i, ent] of Iterator(sh.slice(0, sh.index).reverse()))
                             if (ent.URI.spec == url)
                                 return void window.getWebNavigation().gotoIndex(i);
                         liberator.echoerr("URL not found in history: " + url);
@@ -150,7 +150,7 @@ const History = Module("history", {
                     context.compare = CompletionContext.Sort.unsorted;
                     context.filters = [CompletionContext.Filter.textDescription];
                     context.completions = sh.slice(0, sh.index).reverse();
-                    context.keys = { text: function (item) (sh.index - item.index) + ": " + item.URI.spec, description: "title", icon: "icon" };
+                    context.keys = { text: item => (sh.index - item.index) + ": " + item.URI.spec, description: "title", icon: "icon" };
                 },
                 count: true,
                 literal: 0
@@ -169,7 +169,7 @@ const History = Module("history", {
                         if (/^\d+(:|$)/.test(url) && sh.index + parseInt(url) in sh)
                             return void window.getWebNavigation().gotoIndex(sh.index + parseInt(url));
 
-                        for (let [i, ent] in Iterator(sh.slice(sh.index + 1)))
+                        for (let [i, ent] of Iterator(sh.slice(sh.index + 1)))
                             if (ent.URI.spec == url)
                                 return void window.getWebNavigation().gotoIndex(i);
                         liberator.echoerr("URL not found in history: " + url);
@@ -189,7 +189,7 @@ const History = Module("history", {
                     context.compare = CompletionContext.Sort.unsorted;
                     context.filters = [CompletionContext.Filter.textDescription];
                     context.completions = sh.slice(sh.index + 1);
-                    context.keys = { text: function (item) (item.index - sh.index) + ": " + item.URI.spec, description: "title", icon: "icon" };
+                    context.keys = { text: item => (item.index - sh.index) + ": " + item.URI.spec, description: "title", icon: "icon" };
                 },
                 count: true,
                 literal: 0
@@ -235,7 +235,7 @@ const History = Module("history", {
             if (context.maxItems == null)
                 context.maxItems = 100;
             context.regenerate = true;
-            context.generate = function () history.get(context.filter, this.maxItems);
+            context.generate = function () { return history.get(context.filter, this.maxItems); };
         };
 
         completion.addUrlCompleter("h", "History", completion.history);

@@ -46,10 +46,10 @@ const Events = Module("events", {
         this._code_key = {};
         this._key_code = {};
 
-        for (let [k, v] in Iterator(KeyEvent))
+        for (let [k, v] of entries(KeyEvent))
             if (/^DOM_VK_(?![A-Z0-9]$)/.test(k)) {
                 k = k.substr(7).toLowerCase();
-                let names = [k.replace(/(^|_)(.)/g, function (m, n1, n2) n2.toUpperCase())
+                let names = [k.replace(/(^|_)(.)/g, (m, n1, n2) => n2.toUpperCase())
                               .replace(/^NUMPAD/, "k")];
                 if (k in this._keyTable)
                     names = this._keyTable[k];
@@ -250,7 +250,7 @@ const Events = Module("events", {
     deleteMacros: function (filter) {
         let re = RegExp("[" + filter.replace(/\s+/g, "") + "]");
 
-        for (let [item, ] in this._macros) {
+        for (let [item, ] of this._macros) {
             if (re.test(item))
                 this._macros.remove(item);
         }
@@ -288,7 +288,7 @@ const Events = Module("events", {
                     let evt = events.create(doc, "keypress", evt_obj);
 
                     if (typeof noremap == "object")
-                        for (let [k, v] in Iterator(noremap))
+                        for (let [k, v] of Iterator(noremap))
                             evt[k] = v;
                     else
                         evt.noremap = !!noremap;
@@ -620,7 +620,7 @@ const Events = Module("events", {
      * @param {string} key The key code to test.
      * @returns {boolean}
      */
-    isAcceptKey: function (key) key == "<Return>" || key == "<C-j>" || key == "<C-m>",
+    isAcceptKey: key => key == "<Return>" || key == "<C-j>" || key == "<C-m>",
 
     /**
      * Whether <b>key</b> is a key code defined to reject/cancel input on
@@ -629,7 +629,7 @@ const Events = Module("events", {
      * @param {string} key The key code to test.
      * @returns {boolean}
      */
-    isCancelKey: function (key) key == "<Esc>" || key == "<C-[>" || key == "<C-c>",
+    isCancelKey: key => key == "<Esc>" || key == "<C-[>" || key == "<C-c>",
 
     /**
      * Whether <b>key</b> is a key code defined to go back to NORMAL mode
@@ -637,7 +637,7 @@ const Events = Module("events", {
      * @param {string} key The key code to test.
      * @returns {boolean}
      */
-    isEscapeKey: function (key) key == "<Esc>" || key == "<C-[>",
+    isEscapeKey: key => key == "<Esc>" || key == "<C-[>",
 
     /**
      * Waits for the current buffer to successfully finish loading. Returns
@@ -689,7 +689,7 @@ const Events = Module("events", {
         if (liberator.mode == modes.COMMAND_LINE)
             return;
 
-        function hasHTMLDocument(win) win && win.document && win.document instanceof HTMLDocument
+        function hasHTMLDocument(win) { return  win && win.document && win.document instanceof HTMLDocument; }
 
         let win  = window.document.commandDispatcher.focusedWindow;
         let elem = window.document.commandDispatcher.focusedElement;
@@ -803,7 +803,7 @@ const Events = Module("events", {
                     liberator.focus.blur();
 
                 // select only one message in Muttator
-                if (liberator.has("mail") && !config.isComposeWindow) {
+                if (liberator.has("mail") && !config.isComposeWindow && window.gDBView) {
                     let i = gDBView.selection.currentIndex;
                     if (i == -1 && gDBView.rowCount >= 0)
                         i = 0;
@@ -1090,8 +1090,10 @@ const Events = Module("events", {
                 killEvent();
         }
         catch (e) {
-            if (e !== undefined)
+            if (e !== undefined) {
                 liberator.echoerr(e);
+                console.error(e);
+            }
         }
         finally {
             let motionMap = (this._input.pendingMotionMap && this._input.pendingMotionMap.names[0]) || "";
@@ -1216,21 +1218,21 @@ const Events = Module("events", {
                     liberator.echoerr("Argument required");
             }, {
                 bang: true,
-                completer: function (context) completion.macro(context)
+                completer: context => completion.macro(context)
             });
 
         commands.add(["mac[ros]"],
             "List all macros",
             function (args) { completion.listCompleter("macro", args[0]); }, {
                 argCount: "?",
-                completer: function (context) completion.macro(context)
+                completer: context => completion.macro(context)
             });
 
         commands.add(["pl[ay]"],
             "Replay a recorded macro",
             function (args) { events.playMacro(args[0]); }, {
                 argCount: "1",
-                completer: function (context) completion.macro(context)
+                completer: context => completion.macro(context)
             });
     },
     mappings: function () {
