@@ -349,7 +349,7 @@ function Styles(name, store) {
                       "@namespace xul " + JSON.stringify(XUL.uri) + ";\n" +
                       "@namespace liberator " + JSON.stringify(NS.uri) + ";\n";
 
-    const Sheet = Struct("name", "id", "sites", "css", "system", "agent");
+    const Sheet = Struct("name", "id", "sites", "css", "system", "agent", "url");
     Sheet.prototype.__defineGetter__("fullCSS", function wrapCSS() {
         let filter = this.sites;
         let css = this.css;
@@ -366,17 +366,19 @@ function Styles(name, store) {
     Sheet.prototype.__defineSetter__("enabled", function (on) {
         this._enabled = Boolean(on);
         if (on) {
-            self.registerSheet(cssUri(this.fullCSS));
+            this.url = cssUri(this.fullCSS);
+            self.registerSheet(this.url);
             if (this.agent)
-                self.registerSheet(cssUri(this.fullCSS), true);
+                self.registerSheet(this.url);
         }
         else {
-            self.unregisterSheet(cssUri(this.fullCSS));
-            self.unregisterSheet(cssUri(this.fullCSS), true);
+            self.unregisterSheet(this.url);
+            self.unregisterSheet(this.url, true);
+            URL.revokeObjectURL(this.url);
         }
     });
 
-    let cssUri = function (css) "chrome-data:text/css," + window.encodeURIComponent(css);
+    let cssUri = function (css) URL.createObjectURL(new Blob([css], {type: "text/css"}));
 
     let userSheets = [];
     let systemSheets = [];
