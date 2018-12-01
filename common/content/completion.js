@@ -3,6 +3,7 @@
 //
 // This work is licensed for reuse under an MIT license. Details are
 // given in the License.txt file included with this file.
+"use strict";
 
 
 /** @scope modules */
@@ -512,7 +513,7 @@ const CompletionContext = Class("CompletionContext", {
         let context = CompletionContext(this, name, offset);
         this.contextList.push(context);
         if (completer)
-            return completer.apply(self || this, [context].concat(Array.slice(arguments, arguments.callee.length)));
+            return completer.apply(self || this, [context].concat(Array.slice(arguments, fork.length)));
         return context;
     },
 

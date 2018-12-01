@@ -2,6 +2,7 @@
 //
 // This work is licensed for reuse under an MIT license. Details are
 // given in the License.txt file included with this file.
+"use strict";
 
 /** @scope modules */
 
@@ -78,6 +79,7 @@ const Services = Module("services", {
         this.addClass("find",       "@mozilla.org/embedcomp/rangefind;1",        Ci.nsIFind);
         this.addClass("process",    "@mozilla.org/process/util;1",               Ci.nsIProcess);
         this.addClass("timer",     "@mozilla.org/timer;1",                      Ci.nsITimer);
+        this.addClass("zipWriter",  "@mozilla.org/zipwriter;1",                  Ci.nsIZipWriter);
     },
 
     _create: function (classes, ifaces, meth) {

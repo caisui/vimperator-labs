@@ -3,6 +3,7 @@
 //
 // This work is licensed for reuse under an MIT license. Details are
 // given in the License.txt file included with this file.
+"use strict";
 
 // TODO:
 //   - fix Sanitize autocommand

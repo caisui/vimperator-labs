@@ -2,6 +2,7 @@
 //
 // This work is licensed for reuse under an MIT license. Details are
 // given in the License.txt file included with this file.
+"use strict";
 
 // TODO: Clean this up.
 
@@ -115,7 +116,7 @@ const JavaScript = Module("javascript", {
         return completions;
     },
 
-    eval: function eval(arg, key, tmp) {
+    eval(arg, key, tmp) {
         let cache = this.context.cache.eval;
         let context = this.context.cache.evalContext;
 

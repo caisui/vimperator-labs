@@ -2,6 +2,7 @@
 //
 // This work is licensed for reuse under an MIT license. Details are
 // given in the License.txt file included with this file.
+"use strict";
 
 /** @scope modules */
 
@@ -251,7 +252,7 @@ const StatusLine = Module("statusline", {
             function updateSSLState (node, state) {
                 const VERSION = Services.appinfo.platformVersion;
                 LABEL1: if (services.get("vc").compare(VERSION, "51") >= 0) {
-                    conn_icon = document.getElementById("connection-icon");
+                    let conn_icon = document.getElementById("connection-icon");
                     if (!conn_icon) break LABEL1;
                     node.style.listStyleImage = window.getComputedStyle(conn_icon).getPropertyValue("list-style-image");
                     if (node.style.listStyleImage === "none")

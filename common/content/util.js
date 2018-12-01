@@ -2,6 +2,7 @@
 //
 // This work is licensed for reuse under an MIT license. Details are
 // given in the License.txt file included with this file.
+"use strict";
 
 /** @scope modules */
 
@@ -272,7 +273,7 @@ const Util = Module("util", {
         const TIME = Date.now();
 
         let zip = services.create("zipWriter");
-        zip.open(FILE, io.MODE_CREATE | io.MODE_WRONLY | io.MODE_TRUNCATE);
+        zip.open(FILE, io.File.MODE_CREATE | io.File.MODE_WRONLY | io.File.MODE_TRUNCATE);
         function addURIEntry(file, uri) {
             return zip.addEntryChannel(PATH + file, TIME, 9,
                 services.get("io").newChannel(uri, null, null), false);
@@ -331,7 +332,7 @@ const Util = Module("util", {
                             data.push(">");
                             if (node instanceof HTMLHeadElement)
                                 data.push(`<link rel="stylesheet" type="text/css" href="help.css"/>`/*toXMLString()*/);
-                            Array.map(node.childNodes, arguments.callee);
+                            Array.map(node.childNodes, fix);
                             data.push("</");
                             data.push(node.localName);
                             data.push(">");
@@ -355,7 +356,7 @@ const Util = Module("util", {
         data = data.join("\n");
         addDataEntry("help.css", data.replace(/chrome:[^ ")]+\//g, ""));
 
-        let re = /(chrome:[^ ");]+\/)([^ ");]+)/g;
+        let m, re = /(chrome:[^ ");]+\/)([^ ");]+)/g;
         while ((m = re.exec(data)))
             chrome[m[0]] = m[2];
 

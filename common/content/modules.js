@@ -2,6 +2,7 @@
 //
 // This work is licensed for reuse under an MIT license. Details are
 // given in the License.txt file included with this file.
+"use strict";
 
 /**
  * @class ModuleBase
@@ -54,8 +55,9 @@ const ModuleBase = Class("ModuleBase", {
  */
 function Module(name, prototype, classProperties, moduleInit) {
     var base = ModuleBase;
-    if (callable(prototype))
-        base = Array.splice(arguments, 1, 1)[0];
+    if (callable(prototype)) {
+        [,base,prototype, classProperties, moduleInit] = arguments;
+    }
     const module = Class(name, base, prototype, classProperties);
     module.INIT = moduleInit || {};
     module.requires = prototype.requires || [];

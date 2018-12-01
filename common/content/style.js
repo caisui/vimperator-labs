@@ -4,6 +4,7 @@
 //
 // This work is licensed for reuse under an MIT license. Details are
 // given in the License.txt file included with this file.
+"use strict";
 
 /** @scope modules */
 
@@ -233,7 +234,7 @@ function Highlights(name, store) {
 
     // XXX: buggy?
     let highlightKeys = [];
-    for ([k, v] in this)
+    for (let [k, v] in this)
         highlightKeys.push(k + ": " + util.escapeString(v || "undefined"));
     Highlight.prototype.toString = function () { return "Highlight(" + this.class + ")\n\t" + highlightKeys.join("\n\t") };
 

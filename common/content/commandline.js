@@ -2,6 +2,7 @@
 //
 // This work is licensed for reuse under an MIT license. Details are
 // given in the License.txt file included with this file.
+"use strict";
 
 /** @scope modules */
 
@@ -388,7 +389,7 @@ const CommandLine = Module("commandline", {
     get quiet() { return this._quiet; },
     set quiet(val) {
         this._quiet = val;
-        Array.forEach(document.getElementById("liberator-commandline").childNodes, function (node) {
+        Array.forEach(document.getElementById("liberator-commandline").childNodes, node => {
             node.style.opacity = this._quiet || this._silent ? "0" : "";
         });
     },

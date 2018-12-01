@@ -2,6 +2,7 @@
 //
 // This work is licensed for reuse under an MIT license. Details are
 // given in the License.txt file included with this file.
+"use strict";
 
 const Cc = Components.classes;
 const Ci = Components.interfaces;
@@ -76,7 +77,7 @@ function iter(obj) {
         })();
     if (obj instanceof Array)
         return (function* () {
-            for (value of obj)
+            for (let value of obj)
                 yield value;
         })();
     return Iterator(obj);
@@ -209,12 +210,12 @@ function curry(fn, length, self, acc) {
     if (acc == null)
         acc = [];
 
-    return function () {
+    return function _curry() {
         let args = acc.concat(Array.slice(arguments));
 
         // The curried result should preserve 'this'
         if (arguments.length == 0)
-            return close(self || this, arguments.callee);
+            return close(self || this, _curry);
 
         if (args.length >= length)
             return fn.apply(self || this, args);
@@ -407,18 +408,18 @@ Class.prototype = {
  * @returns {function} The constructor for the new Struct.
  */
 function Struct(...args) {
-    const Struct = Class("Struct", StructBase, {
+    const aStruct = Class("Struct", StructBase, {
         length: args.length,
         members: args
     });
     args.forEach(function (name, i) {
-        Object.defineProperty(Struct.prototype, name, {
+        Object.defineProperty(aStruct.prototype, name, {
             get: function () { return this[i]; },
             set: function (val) { this[i] = val },
             enumerable: true,
         });
     });
-    return Struct;
+    return aStruct;
 }
 const StructBase = Class("StructBase", {
     init: function (...args) {

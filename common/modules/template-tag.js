@@ -1,4 +1,6 @@
 // vim: set fdm=marker:
+"use strict";
+
 var EXPORTED_SYMBOLS = ["xml", "TemplateSupportsXML"] ;
 
 // {{{ escape function

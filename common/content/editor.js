@@ -2,6 +2,7 @@
 //
 // This work is licensed for reuse under an MIT license. Details are
 // given in the License.txt file included with this file.
+"use strict";
 
 
 /** @scope modules */
@@ -436,10 +437,10 @@ const Editor = Module("editor", {
         // blink the textbox after returning
         if (elem) {
             let colors = [tmpBg, oldBg, tmpBg, oldBg];
-            (function () {
+            (function f() {
                 elem.style.backgroundColor = colors.shift();
                 if (colors.length > 0)
-                    setTimeout(arguments.callee, 100);
+                    setTimeout(f, 100);
             })();
         }
 

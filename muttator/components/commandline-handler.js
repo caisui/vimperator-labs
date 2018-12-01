@@ -1,4 +1,6 @@
 // Header:
+"use strict";
+
 const Name = "Muttator";
 /*
  * We can't load our modules here, so the following code is sadly
