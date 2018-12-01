@@ -1171,7 +1171,7 @@ const Mail = Module("mail", {
 
         options.add(["smtpserver", "smtp"],
             "Set the default SMTP server",
-            "string", services.get("smtpService").defaultServer.key, // TODO: how should we handle these persistent external defaults - "inherit" or null?
+            "string", (services.get("smtpService").defaultServer||{}).key, // TODO: how should we handle these persistent external defaults - "inherit" or null?
             {
                 getter: function () services.get("smtpService").defaultServer.key,
                 setter: function (value) {
