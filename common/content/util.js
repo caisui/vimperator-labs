@@ -573,12 +573,27 @@ const Util = Module("util", {
 
         let keys = [];
         try { // window.content often does not want to be queried with "var i in object"
-            let hasValue = !("__iterator__" in object);
+            let hasValue = true;
             if (modules.isPrototypeOf(object)) {
                 object = Iterator(object);
                 hasValue = false;
             }
-            for (let i in object) {
+            function* ii(obj) {
+                for(let i of Object.keys(obj))
+                    yield i;
+                for(let i of Object.getOwnPropertySymbols(obj))
+                    yield i;
+
+                // XXX: Specification change
+                if ("__iterator__" in object) {
+                    hasValue = false;
+                    for(let i of object.__iterator__()) {
+                        yield i;
+                    }
+                    hasValue = true;
+                }
+            };
+            for (let i of ii(object)) {
                 let value = xml`<![CDATA[<no value>]]>`;
                 try {
                     value = object[i];
@@ -593,7 +608,9 @@ const Util = Module("util", {
 
                 value = template.highlight(value, true, 150);
                 let key = xml`<span highlight="Key">${i}</span>`;
-                if (!isNaN(i))
+                if (typeof i === "symbol") {
+                    i = String(i);
+                } else if (!isNaN(i))
                     i = parseInt(i);
                 else if (/^[A-Z_]+$/.test(i))
                     i = "";
@@ -607,7 +624,7 @@ const Util = Module("util", {
                 return a[0] - b[0];
             return String(a[0]).localeCompare(b[0]);
         }
-        xml["+="](string, template.map2(xml, keys.sort(compare), f => f[1]));
+        xml["+="](string, template.map2(xml, keys, f => f[1]));
         return string;
     },
 
