@@ -318,6 +318,139 @@ const File = Class("File", {
     }
 });
 
+class BaseReader {
+    constructor() {
+        this.open = open;
+        this.path = "undefined(string)";
+    }
+    close() {
+        this.open = false;
+    }
+    *[Symbol.iterator]() {
+        throw new Error("iterator not impliment");
+    }
+    getCommands() {
+        const gene = this._getCommands();
+        let loop = true;
+        return {
+            close() {
+                loop = false;
+            },
+            [Symbol.iterator]() {
+                return {
+                    next() {
+                        return loop ? gene.next() : {done:true};
+                    }
+                }
+            }
+        };
+    }
+    *_getCommands() {
+        var hereDocEnd = null;
+        for(let [i, line] of this) {
+            line = line.replace(/\r$/, "");
+
+            if (hereDocEnd) {
+                if (line === hereDocEnd) {
+                    yield {cmd, count, bang, args};
+                    hereDocEnd = null;
+                } else {
+                    args += line + "\n";
+                }
+                continue;
+            }
+
+            if (/^\s*(".*)?$/.test(line))
+                continue;
+
+            var [count, cmd, bang, args] = commands.parseCommand(line);
+            var command = cmd = commands.get(cmd);
+
+            if (!command) {
+                let lineNumber = i + 1;
+
+                liberator.echoerr("Error detected while processing: " + this.path, commandline.FORCE_MULTILINE);
+                commandline.echo("line " + lineNumber + ":", commandline.HL_LINENR, commandline.APPEND_TO_MESSAGES);
+                liberator.echoerr("Not an editor command: " + line);
+            } else {
+                if (command.hereDoc) {
+                    var m = args.match(/(.*)<<\s*(\S+)$/);
+                    if (m) {
+                        args = m[1];
+                        hereDocEnd = m[2]
+                    }
+                }
+                if (!hereDocEnd)
+                    yield {cmd, count, bang, args};
+            }
+        }
+
+        if (hereDocEnd) {
+            yield {cmd, count, bang, args};
+        }
+    }
+}
+
+class StringReader extends BaseReader {
+    constructor(str, path) {
+        super();
+        this.str = str;
+        if (path) this.path = path;
+    }
+    *[Symbol.iterator]() {
+        const re = /(.*)(?:\r\n|[\r\n])/g;
+        let num = 1;
+        while (this.open) {
+            var m = re.exec(this.str);
+            if (!m) break;
+            yield [num++, m[1]];
+        }
+    }
+    static fromFile(file) {
+        var sr = new StringReader(file.read());
+        sr.path = file.path;
+        return sr;
+    }
+}
+class CommandLineReader extends BaseReader {
+    constructor(cmdline) {
+        super();
+        this.cmdline = cmdline || commandline;
+    }
+    *[Symbol.iterator]() {
+        var value, wait = true;
+        let {cmdline} = this;
+
+        let num = 1;
+        while (this.open && num < 2**4) {
+            wait = true;
+            cmdline.input("  ", v => {
+                value = v;
+                wait = false;
+            }, {
+                completer: completion.ex,
+                onCancel() {
+                    value = void 0;
+                    wait = false;
+                },
+            });
+
+            // TODO: use Promise
+            var thread = services.get("tm").mainThread;
+            while (wait) {
+                thread.processNextEvent(true);
+            }
+
+            if (value === undefined) {
+                this.close();
+                break;
+            }
+
+            yield [num++, value];
+        }
+    }
+}
+
 // TODO: why are we passing around strings rather than file objects?
 /**
  * Provides a basic interface to common system I/O operations.
@@ -396,6 +529,8 @@ const IO = Module("io", {
      * @final
      */
     File: File,
+
+    StringReader, CommandLineReader, BaseReader,
 
     /**
      * @property {Object} The current file sourcing context. As a file is
@@ -685,65 +820,18 @@ lookup:
             else if (/\.css$/.test(filename))
                 storage.styles.registerSheet(uri.spec, false, true);
             else {
-                let heredoc = "";
-                let heredocEnd = null; // the string which ends the heredoc
-                let lines = str.split(/\r\n|[\r\n]/);
-
-                function execute(args) { command.execute(args, special, count, { setFrom: file }); }
-
-                for (let [i, line] of Object.entries(lines)) {
-                    if (heredocEnd) { // we already are in a heredoc
-                        if (heredocEnd.test(line)) {
-                            execute(heredoc);
-                            heredoc = "";
-                            heredocEnd = null;
-                        }
-                        else
-                            heredoc += line + "\n";
+                let reader = io.StringReader.fromFile(file);
+                let ex = {
+                    setFrom: file,
+                    iter: reader.getCommands(),
+                };
+                for (let obj of ex.iter) {
+                    if (obj.cmd.name === "finish") {
+                        ex.iter.close();
+                        break;
                     }
-                    else {
-                        this.sourcing.line = i + 1;
-                        // skip line comments and blank lines
-                        line = line.replace(/\r$/, "");
-
-                        if (/^\s*(".*)?$/.test(line))
-                            continue;
-
-                        var [count, cmd, special, args] = commands.parseCommand(line);
-                        var command = commands.get(cmd);
-
-                        if (!command) {
-                            let lineNumber = i + 1;
-
-                            liberator.echoerr("Error detected while processing: " + file.path);
-                            commandline.echo("line " + lineNumber + ":", commandline.HL_LINENR, commandline.APPEND_TO_MESSAGES);
-                            liberator.echoerr("Not an editor command: " + line);
-                        }
-                        else {
-                            if (command.name == "finish")
-                                break;
-                            else if (command.hereDoc) {
-                                // check for a heredoc
-                                let matches = args.match(/(.*)<<\s*(\S+)$/);
-
-                                if (matches) {
-                                    args = matches[1];
-                                    heredocEnd = RegExp("^" + matches[2] + "$", "m");
-                                    if (matches[1])
-                                        heredoc = matches[1] + "\n";
-                                    continue;
-                                }
-                            }
-
-                            execute(args);
-                        }
-                    }
+                    obj.cmd.execute(obj.args, obj.bang, obj.count, ex);
                 }
-
-                // if no heredoc-end delimiter is found before EOF then
-                // process the heredoc anyway - Vim compatible ;-)
-                if (heredocEnd)
-                    execute(heredoc);
             }
 
             if (this._scriptNames.indexOf(file.path) == -1)
@@ -1013,6 +1101,104 @@ lookup:
                 completer: context => completion.shellCommand(context),
                 literal: 0
             });
+
+        // define if command
+        let extra = {
+            argCount: 1,
+            literal: 0,
+            hereDoc: true,
+            completer: completion.javascript,
+        };
+        commands.add(["if"], "if expression", function ifexpression(args, mod) {
+            try {
+                var ex = Object.create(mod);
+                if (!ex.iter) {
+                    let o = new io.CommandLineReader;
+                    ex.iter = o.getCommands();
+                }
+
+                var scope = Object.create(userContext);
+                var useElse = false;
+                var obj, cmd;
+
+                if (!mod.skip) {
+                    var res = liberator.eval(args.string, scope);
+                    if (!res) {
+                        LOOP: for (let obj of ex.iter) {
+                            switch (obj.cmd.name) {
+                            case "if":
+                                var extra = Object.create(mod);
+                                extra.skip = true;
+                                ifexpression(obj.args, extra);
+                                break;
+                            case "elseif":
+                                res = liberator.eval(obj.args, scope);
+                                if (res) break LOOP;
+                                break;
+                            case "else":
+                                res = true;
+                                useElse = true;
+                                break LOOP;
+                            case "endif":
+                                return;
+                            }
+                        }
+                        if (!res) throw Error("E171:");
+                    }
+
+                    // execute
+                    LOOP: for (let obj of ex.iter) {
+                        switch(obj.cmd.name) {
+                        //case "if":
+                        //    cmd.execute(args, Object.create(mod));
+                        //    break;
+                        case "elseif":
+                            if (useElse) throw Error("E584:");
+                            break LOOP;
+                        case "else":
+                            if (useElse) throw Error("E583:");
+                            useElse = true;
+                            break LOOP;
+                        case "endif":
+                            return;
+                        case "finish":
+                            ex.iter.close();
+                            return;
+                        default:
+                            obj.cmd.execute(obj.args, obj.bang, obj.count, ex);
+                            break;
+                        }
+                    }
+                }
+
+                for (let obj of ex.iter) {
+                    switch (obj.cmd.name) {
+                    case "if":
+                        ex.skip = true;
+                        obj.cmd.execute(obj.args, obj.bang, obj.count, ex);
+                        break;
+                    case "elseif":
+                        if (useElse) throw Error("E583");
+                        break;
+                    case "else":
+                        if (useElse) throw Error("E583");
+                        useElse = true;
+                        break;
+                    case "endif":
+                        return;
+                    }
+                }
+                throw Error("E171:");
+            } catch (ex) {
+                console.error(ex);
+                Cu.reportError(ex);
+                liberator.echoerr(ex);
+                throw ex;
+            }
+        }, extra);
+        commands.add(["elsei[f]"], "elseif expression",function (args) { throw Error("E581"); }, extra);
+        commands.add(["el[se]"],   "else expression",  function (args) { throw Error("E581"); }, { arcCount: 0});
+        commands.add(["en[dif]"],  "endif expression", function (args) { throw Error("E580"); }, { arcCount: 0});
     },
     completion: function () {
         JavaScript.setCompleter([this.File, File.expandPath],
