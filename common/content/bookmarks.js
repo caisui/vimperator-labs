@@ -251,11 +251,15 @@ const Bookmarks = Module("bookmarks", {
                 bs.setKeywordForBookmark(id, keyword);
             if (tags) {
                 PlacesUtils.tagging.untagURI(uri, null);
-                PlacesUtils.tagging.tagURI(uri, tags);
+
+                if (tags.length > 0) {
+                    PlacesUtils.tagging.tagURI(uri, tags);
+                }
             }
         }
         catch (e) {
             liberator.echoerr(e);
+            console.error(e, tags);
             return false;
         }
 
