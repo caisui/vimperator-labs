@@ -538,9 +538,23 @@ const Liberator = Module("liberator", {
         let fileMap = services.get("liberator:").FILE_MAP;
         let overlayMap = services.get("liberator:").OVERLAY_MAP;
 
+        // XXX:
+        {
+            let {io} = Services;
+            var newChannelFromURI = io.newChannelFromURI2 ?
+                function newChannelFromURI(uri) {
+                    return io.newChannelFromURI2(
+                            uri,
+                            null,      // aLoadingNode
+                            Services.scriptSecurityManager.getSystemPrincipal(),
+                            null,      // aTriggeringPrincipal
+                            Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
+                            Ci.nsIContentPolicy.TYPE_OTHER)
+                } : io.newChannelFromURI.bind(io);
+        }
         // XXX: util.httpGet is very heavy on startup. (Fx32)
         function httpGet(url) {
-            var channel = services.get("io").newChannelFromURI(makeURI(url));
+            var channel = newChannelFromURI(makeURI(url));
             try {
                 var stream = channel.open();
             } catch (ex) {

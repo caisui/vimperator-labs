@@ -31,11 +31,22 @@ channel.cancel(NS_BINDING_ABORTED);
 delete channel;
 
 function dataURL(type, data) "data:" + (type || "application/xml;encoding=UTF-8") + "," + encodeURIComponent(data)
+XPCOMUtils.defineLazyGetter(this, "newChannelFromURI", () => ioService.newChannelFromURI2
+    ?  function newChannelFromURI(uri) {
+        return ioService.newChannelFromURI2(
+                uri,
+                null,      // aLoadingNode
+                systemPrincipal,
+                null,      // aTriggeringPrincipal
+                Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
+                Ci.nsIContentPolicy.TYPE_OTHER);
+    } : ioService.newChannelFromURI.bind(ioService)
+)
 function makeChannel(url, orig) {
     if (typeof url == "function")
         url = dataURL.apply(null, url());
     let uri = ioService.newURI(url, null, null);
-    let channel = ioService.newChannelFromURI(uri);
+    var channel = newChannelFromURI(uri);
     channel.owner = systemPrincipal;
     channel.originalURI = orig;
     return channel;
