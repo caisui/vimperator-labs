@@ -333,10 +333,15 @@ function Class() {
             constructor: Constructor,
             get closure() {
                 delete this.closure;
-                function closure(fn) { return function () { return fn.apply(self, arguments); };}
-                for (let k in this)
-                    if (!this.__lookupGetter__(k) && callable(this[k]))
-                        closure[k] = closure(self[k]);
+                let closure = {};
+
+                let seen = new Set;
+                for (let o = this; o; o = Object.getPrototypeOf(o))
+                    for (let k of Object.getOwnPropertyNames(o))
+                        if (!this.__lookupGetter__(k) && callable(this[k]) && !seen.has(k)) {
+                            seen.add(k);
+                            closure[k] = self[k].bind(this);
+                        }
                 return this.closure = closure;
             }
         };
