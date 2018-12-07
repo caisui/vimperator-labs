@@ -121,7 +121,7 @@ var Config = Module("config", ConfigBase, {
                 liberator.mode = modes.MESSAGE;
         }
     },*/
-    get browser() { return this.isComposeWindow ? window.GetCurrentEditorElement() : window.getBrowser(); },
+    get browser() { return this.isComposeWindow ? window.GetCurrentEditorElement() : (window.getBrowser() || document.getElementById("dummycontentbrowser")); },
     tabbrowser: {
         __proto__: document.getElementById("tabmail"),
         get mTabContainer() { return this.tabContainer; },
