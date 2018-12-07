@@ -262,7 +262,13 @@ const JavaScript = Module("javascript", {
                     this._push(this._c);
                     break;
                 case ".":
-                    this._top.dots.push(this._i);
+                    if (this._str.startsWith("...", this._i - 2)) {
+                        this._top.dots.pop();
+                        this._top.dots.pop();
+                        this._top.statements.push(this._i+1);
+                    } else {
+                        this._top.dots.push(this._i);
+                    }
                     break;
                 case ")": this._pop("("); break;
                 case "]": this._pop("["); break;
