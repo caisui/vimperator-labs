@@ -246,4 +246,10 @@
     }
 }
 
+@-moz-document
+    url(chrome://messenger/content/messenger.xul),
+    url(chrome://messenger/content/messengercompose/messengercompose.xul) {
+    .liberator-floatbox { z-index: 11; }
+}
+
 /* vim: set fdm=marker sw=4 ts=4 et: */
