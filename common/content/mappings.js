@@ -145,6 +145,10 @@ const Mappings = Module("mappings", {
     init: function () {
         this._main = []; // default mappings
         this._user = []; // user created mappings
+
+        for(let {mask} of new Set(Object.values(modes._modeMap))) {
+            this.addMode(mask);
+        }
     },
 
     _matchingUrlsTest: function (map, patternOrUrl) {
