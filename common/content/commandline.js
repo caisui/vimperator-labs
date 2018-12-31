@@ -1679,7 +1679,7 @@ const CommandLine = Module("commandline", {
             });
 
             let idList = ["liberator-multiline-output", "liberator-completions"];
-            function floatBox(id) { document.getElementById(id).parentNode; }
+            function floatBox(id) { return document.getElementById(id).parentNode; }
 
             let animation = "animation";
             options.add(["animations", "ani"], "enabled animation", "boolean", false, {
