@@ -390,7 +390,7 @@ const Mappings = Module("mappings", {
 
         // build results
         let displayMaps = [];
-        for (map of maps) {
+        for (let map of maps) {
             let modes = "";
             map.modes.forEach(function (mode) {
                 for (let m of modules.modes.mainModes)
