@@ -104,7 +104,7 @@ const Buffer = Module("buffer", {
             }
 
             let lastModVerbose = new Date(doc.lastModified).toLocaleString();
-            let lastMod = new Date(doc.lastModified).toLocaleFormat("%x %X");
+            let lastMod = new Date(doc.lastModified).toLocaleDateString(window.navigator.languages);
 
             if (lastModVerbose == "Invalid Date" || new Date(doc.lastModified).getFullYear() == 1970)
                 lastModVerbose = lastMod = null;
