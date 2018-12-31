@@ -1247,11 +1247,11 @@ const Events = Module("events", {
             function (count) { commandline.open("", count ? String(count) : "", modes.EX); }, {count: true});
 
         // focus events
-        mappings.add([modes.NORMAL, modes.PLAYER, modes.VISUAL, modes.CARET],
+        mappings.add([modes.NORMAL, modes.VISUAL, modes.CARET],
             ["<Tab>"], "Advance keyboard focus",
             function () { document.commandDispatcher.advanceFocus(); });
 
-        mappings.add([modes.NORMAL, modes.PLAYER, modes.VISUAL, modes.CARET, modes.INSERT, modes.TEXTAREA],
+        mappings.add([modes.NORMAL, modes.VISUAL, modes.CARET, modes.INSERT, modes.TEXTAREA],
             ["<S-Tab>"], "Rewind keyboard focus",
             function () { document.commandDispatcher.rewindFocus(); });
 
@@ -1268,12 +1268,12 @@ const Events = Module("events", {
             function () { return; });
 
         // macros
-        mappings.add([modes.NORMAL, modes.PLAYER, modes.MESSAGE],
+        mappings.add([modes.NORMAL, modes.MESSAGE],
             ["q"], "Record a key sequence into a macro",
             function (arg) { events.startRecording(arg); },
             { arg: true });
 
-        mappings.add([modes.NORMAL, modes.PLAYER, modes.MESSAGE],
+        mappings.add([modes.NORMAL, modes.MESSAGE],
             ["@"], "Play a macro",
             function (count, arg) {
                 if (count < 1) count = 1;
