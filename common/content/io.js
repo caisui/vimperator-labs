@@ -805,7 +805,7 @@ lookup:
             if (/\.js$/.test(filename)) {
                 try {
                     // Workaround for SubscriptLoader caching.
-                    let suffix = '?' + encodeURIComponent(services.get("UUID").generateUUID().toString());
+                    let suffix = '?t=' + file.lastModifiedTime.toString(36);
                     liberator.loadScript(uri.spec + suffix, Script(file));
                     if (liberator.initialized)
                         liberator.initHelp();
