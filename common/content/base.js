@@ -92,7 +92,7 @@ function Iterator(obj) {
     if (obj instanceof Iterator) return obj;
     if (isgenerator(obj)) {
         gene = obj;
-    } else if ("__iterator__" in obj) {
+    } else if (obj.__iterator__) {
         console.warn(new Error("__iterator__ is deprecated."));
         gene = obj.__iterator__();
     } else {
