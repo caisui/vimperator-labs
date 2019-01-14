@@ -498,21 +498,8 @@ const Options = Module("options", {
     /** @property {Object} Observes preference value changes. */
     prefObserver: {
         register: function () {
-            // better way to monitor all changes?
-
-            var num = 100;
-            const self = this;
-            function f() {
-                try {
-                self._branch = services.get("prefs").getBranch("");///.QueryInterface(Ci.nsIPrefBranch2);
-                self._branch.addObserver("", self, false);
-                } catch (ex) {
-                    console.error("pref", num, ex);
-                    if (num-- > 0)
-                        setTimeout(f, 1000);
-                }
-            }
-            f();
+            this._branch = services.get("prefs").getBranch("");
+            this._branch.addObserver("", this, false);
         },
 
         unregister: function () {
@@ -871,17 +858,7 @@ const Options = Module("options", {
         switch (typeof value) {
         case "string":
             if (type == Ci.nsIPrefBranch.PREF_INVALID || type == Ci.nsIPrefBranch.PREF_STRING) {
-                try {
-                    services.get("prefs").setStringPref(name, vaule);
-                } catch (ex) {
-                    try {
-                    let supportString = Cc["@mozilla.org/supports-string;1"].createInstance(Ci.nsISupportsString);
-                    supportString.data = value;
-                    services.get("prefs").setComplexValue(name, Ci.nsISupportsString, supportString);
-                    } catch (ex2) {
-                        console.error(ex2);
-                    }
-                }
+                services.get("prefs").setStringPref(name, value);
             }
             else if (type == Ci.nsIPrefBranch.PREF_INT)
                 liberator.echoerr("Number required after =: " + name + "=" + value);
@@ -917,7 +894,7 @@ const Options = Module("options", {
         try {
             switch (type) {
             case Ci.nsIPrefBranch.PREF_STRING:
-                let value = branch.getComplexValue(name, Ci.nsISupportsString).data;
+                let value = branch.getStringPref(name);
                 // try in case it's a localized string (will throw an exception if not)
                 if (!services.get("prefs").prefIsLocked(name) && !services.get("prefs").prefHasUserValue(name) &&
                     RegExp("chrome://.+/locale/.+\\.properties").test(value))
