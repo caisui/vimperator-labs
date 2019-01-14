@@ -1093,7 +1093,6 @@ const Events = Module("events", {
         catch (e) {
             if (e !== undefined) {
                 liberator.echoerr(e);
-                console.error(e);
             }
         }
         finally {

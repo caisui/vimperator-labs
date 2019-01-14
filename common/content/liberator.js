@@ -304,17 +304,18 @@ const Liberator = Module("liberator", {
         try {
             flags |= commandline.APPEND_TO_MESSAGES | commandline.DISALLOW_MULTILINE | commandline.FORCE_SINGLELINE;
 
-            if (typeof str == "object" && "echoerr" in str)
-                str = str.echoerr;
+            var msg = str;
+            if (typeof msg == "object" && "echoerr" in msg)
+                msg = msg.echoerr;
 
             if (options.errorbells)
                 liberator.beep();
 
-            commandline.echo((prefix || "") + str, commandline.HL_ERRORMSG, flags);
+            commandline.echo((prefix || "") + msg, commandline.HL_ERRORMSG, flags);
 
             // For errors, also print the stack trace to our :messages list
             if (str instanceof Error) {
-                console.error("echoerr", str);
+                Cu.reportError(str);
                 let stackTrace = xml``;
                 let stackItems = new Error().stack.split('\n');
                 // ignore the first element intentionally!

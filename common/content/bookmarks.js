@@ -259,7 +259,6 @@ const Bookmarks = Module("bookmarks", {
         }
         catch (e) {
             liberator.echoerr(e);
-            console.error(e, tags);
             return false;
         }
 

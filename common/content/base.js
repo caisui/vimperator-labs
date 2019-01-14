@@ -93,7 +93,7 @@ function Iterator(obj) {
     if (isgenerator(obj)) {
         gene = obj;
     } else if (obj.__iterator__) {
-        console.warn(new Error("__iterator__ is deprecated."));
+        Cu.reportError(new Error("DEPRECATION WARNING: __iterator__ is deprecated."));
         gene = obj.__iterator__();
     } else {
         gene = Object.entries(obj)[Symbol.iterator]();

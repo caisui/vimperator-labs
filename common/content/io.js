@@ -811,9 +811,7 @@ lookup:
                         liberator.initHelp();
                 }
                 catch (e) {
-                    let err = new Error();
-                    for (let [k, v] of Iterator(e))
-                        err[k] = v;
+                    let err = e;
                     err.echoerr = xml`${file.path}:${e.lineNumber}: ${e}`;
                     throw err;
                 }
@@ -841,7 +839,6 @@ lookup:
             liberator.log("Sourced: " + filename);
         }
         catch (e) {
-            console.error(e);
             liberator.echoerr(e, null, "Sourcing file failed: ");
         }
         finally {
@@ -1191,8 +1188,6 @@ lookup:
                 }
                 throw Error("E171:");
             } catch (ex) {
-                console.error(ex);
-                Cu.reportError(ex);
                 liberator.echoerr(ex);
                 throw ex;
             }

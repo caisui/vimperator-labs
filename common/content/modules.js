@@ -115,7 +115,7 @@ window.addEventListener("load", function onload() {
                 fn();
         }
         catch (e) {
-            console.error(module&&module.name, e);
+            Components.utils.reportError(e);
             dump("Loading " + (module && module.name) + ": " + e + "\n");
             if (e.stack)
                 dump(e.stack);
