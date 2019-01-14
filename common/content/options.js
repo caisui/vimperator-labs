@@ -653,7 +653,7 @@ const Options = Module("options", {
                 if (onlyNonDefault && !userValue || pref.indexOf(filter) == -1)
                     continue;
 
-                value = options.getPref(pref);
+                let value = options.getPref(pref);
 
                 let option = {
                     isDefault: !userValue,
